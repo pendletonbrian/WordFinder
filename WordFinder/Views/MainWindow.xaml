@@ -1,0 +1,119 @@
+﻿<Window x:Class="WordFinder.Views.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:WordFinder.ViewModel"
+        xmlns:converters="clr-namespace:WordFinder.Classes.Converters"
+        mc:Ignorable="d"
+        d:DataContext="{d:DesignInstance Type=vm:MainWindowViewModel}"
+        WindowStartupLocation="CenterScreen"
+        Loaded="Window_Loaded"
+        Title="MainWindow" Height="450" Width="800">
+
+    <Window.Resources>
+        <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" />
+    </Window.Resources>
+
+    <Window.CommandBindings>
+        <CommandBinding Command="{x:Static vm:MainWindowViewModel.ReadFileCommand}"
+                        CanExecute="ReadFileCommand_CanExecute"
+                        Executed="ReadFileCommand_Executed" />
+        <CommandBinding Command="{x:Static vm:MainWindowViewModel.ReadDirectoryCommand}"
+                        CanExecute="ReadDirectoryCommand_CanExecute"
+                        Executed="ReadDirectoryCommand_Executed" />
+        <CommandBinding Command="{x:Static vm:MainWindowViewModel.GenerateListCommand}"
+                        CanExecute="GenerateListCommand_CanExecute"
+                        Executed="GenerateListCommand_Executed" />
+    </Window.CommandBindings>
+    
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <Grid.RowDefinitions>
+
+            <!-- Menu -->
+            <RowDefinition Height="Auto" />
+
+            <!-- Quick search -->
+            <RowDefinition Height="Auto" />
+
+            <!-- Main area -->
+            <RowDefinition Height="*" />
+
+            <!-- Status bar -->
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        
+        <!-- Menu -->
+        <Menu Grid.Column="0"
+              Grid.Row="0">
+            <MenuItem Header="File"
+                      Margin="2">
+                <MenuItem Header="Read individual"
+                          ToolTip="Read in a list of words to add to dictionary"
+                          Command="{x:Static vm:MainWindowViewModel.ReadFileCommand}" />
+                <MenuItem Header="Read directory"
+                          ToolTip="Read in an entire directory of lists of words"
+                          Command="{x:Static vm:MainWindowViewModel.ReadDirectoryCommand}" />
+                <Separator />
+                <MenuItem Header="Generate list"
+                          ToolTip="Create a dictionary or words"
+                          Command="{x:Static vm:MainWindowViewModel.GenerateListCommand}" />
+            </MenuItem>
+        </Menu>
+
+        <!-- Search box -->
+        <TextBox Grid.Column="0"
+                 Grid.Row="1"
+                 Margin="4"
+                 HorizontalAlignment="Stretch"
+                 VerticalAlignment="Center"
+                 Text="Search box" />
+
+        <ListView Grid.Column="0"
+                  Grid.Row="2"
+                  HorizontalAlignment="Stretch"
+                  VerticalAlignment="Stretch"
+                  Margin="4" />
+
+        <Border Grid.Column="0"
+                Grid.Row="3"
+                BorderBrush="LightBlue"
+                BorderThickness="1"
+                VerticalAlignment="Bottom"
+                Margin="2,1,2,2">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="150" />
+                </Grid.ColumnDefinitions>
+
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <!-- Status label -->
+                <TextBlock Grid.Column="0"
+                           Grid.Row="0"
+                           Padding="2"
+                           MinHeight="20"
+                           HorizontalAlignment="Left"
+                           Text="{Binding StatusLabelText}" />
+
+                <!-- Progress bar -->
+                <ProgressBar Grid.Column="1"
+                             Grid.Row="0"
+                             Minimum="0"
+                             Maximum="100"
+                             Margin="2"
+                             IsIndeterminate="{Binding ShowProgressBar}"
+                             Visibility="{Binding ShowProgressBar, Converter={StaticResource BoolToVisibilityConverter}}" />
+                
+            </Grid>
+        </Border>
+
+    </Grid>
+</Window>
