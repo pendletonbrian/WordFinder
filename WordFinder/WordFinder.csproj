@@ -13,12 +13,23 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="data\dwyl.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="data\enable1.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="data\jlawler.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EditorConfigFiles Remove="C:\Users\bpendleton\Documents\Git\WordFinder\WordFinder\.editorconfig" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="C:\Users\bpendleton\Documents\Git\WordFinder\WordFinder\.editorconfig" />
   </ItemGroup>
 
 </Project>

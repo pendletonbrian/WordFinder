@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows.Input;
+using System.Xml;
 using WordFinder.Classes;
 
 namespace WordFinder.ViewModel
@@ -11,6 +13,8 @@ namespace WordFinder.ViewModel
     public class MainWindowViewModel : NotifyObject
     {
         #region Public Members
+
+        internal static readonly string WORD_LIST_FILE_NAME = "word_finder_word_list.xml";
 
         public static RoutedCommand ReadFileCommand = new RoutedCommand();
         public static RoutedCommand ReadDirectoryCommand = new RoutedCommand();
@@ -22,7 +26,7 @@ namespace WordFinder.ViewModel
 
         private int m_WordLength = 5;
 
-        private List<string> m_WordList = new();
+        private WordList m_WordList = new();
 
         private bool m_ShowProgressBar;
 
@@ -97,7 +101,7 @@ namespace WordFinder.ViewModel
             }
         }
 
-        public List<string> WordList
+        public WordList WordList
         {
             get => m_WordList;
         }
@@ -113,7 +117,7 @@ namespace WordFinder.ViewModel
 
         #region Public Methods
 
-        internal void ReadFile(string fullyQualifiedFilepath)
+        internal async Task ReadWordListTxtFile(string fullyQualifiedFilepath)
         {
             try
             {
@@ -127,28 +131,37 @@ namespace WordFinder.ViewModel
                 Stopwatch timer = Stopwatch.StartNew();
 
                 int lineCount = 0;
+                int skippedWords = 0;
                 string line;
 
-                using (StreamReader rdr = new(fullyQualifiedFilepath))
+                await Task.Run(() =>
                 {
-                    while ((line = rdr.ReadLine()) != null)
+                    using (StreamReader rdr = new(fullyQualifiedFilepath))
                     {
-                        if (m_WordList.Contains(line, StringComparer.OrdinalIgnoreCase))
+                        while ((line = rdr.ReadLine()) != null)
                         {
-                            continue;
+                            if (WordList.Contains(line, StringComparer.OrdinalIgnoreCase))
+                            {
+                                ++skippedWords;
+
+                                continue;
+                            }
+
+                            ++lineCount;
+
+                            WordList.Add(line);
                         }
-
-                        ++lineCount;
-
-                        m_WordList.Add(line);
                     }
-                }
+
+                    WordList.Sort();
+                });
 
                 timer.Stop();
 
                 var fileInfo = new FileInfo(fullyQualifiedFilepath);
 
-                StatusLabelText = $"Added {lineCount:###,###,##0} words from \"{fileInfo.Name}\" in {timer.Elapsed}.";
+                StatusLabelText = $"Added {lineCount:###,###,##0} words and skipped {skippedWords:###,###,##0} words from " +
+                    $"\"{fileInfo.Name}\" in {timer.Elapsed} for a total of {WordList.Count:###,###,##0}.";
 
                 RaisePropertyChanged(nameof(WordList));
             }
@@ -160,6 +173,11 @@ namespace WordFinder.ViewModel
             {
                 IsBusy = false;
             }
+        }
+
+        internal async Task Save(string fullyQualifiedFilepath)
+        {
+            await WordList.Save(fullyQualifiedFilepath);
         }
 
         #endregion Public Methods

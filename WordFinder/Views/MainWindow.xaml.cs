@@ -1,19 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 using Microsoft.Win32;
 using WordFinder.ViewModel;
 
@@ -56,31 +45,35 @@ namespace WordFinder.Views
 
         #region Private Methods
 
-        private void Window_Loaded(object sender, RoutedEventArgs e)
+        private async void Window_Loaded(object sender, RoutedEventArgs e)
         {
             try
             {
-                //var dataDir = AppDomain.CurrentDomain.BaseDirectory;
+                var dataDir = AppDomain.CurrentDomain.BaseDirectory;
 
-                //dataDir = System.IO.Path.Combine(dataDir, "data");
+                dataDir = Path.Combine(dataDir, "data");
 
-                //if (Directory.Exists(dataDir) == false)
-                //{
-                //    throw new DirectoryNotFoundException($"Data directory at \"{dataDir}\" does not exist.");
-                //}
+                if (Directory.Exists(dataDir) == false)
+                {
+                    throw new DirectoryNotFoundException($"Data directory at \"{dataDir}\" does not exist.");
+                }
 
-                //var dataDirDI = new DirectoryInfo(dataDir);
+                var wordListFile = Path.Combine(dataDir, MainWindowViewModel.WORD_LIST_FILE_NAME);
 
-                //var wordListFiles = dataDirDI.GetFiles("*.txt");
+                if (File.Exists(wordListFile) == false)
+                {
+                    m_ViewModel.StatusLabelText = $"Word list does not exist at \"{wordListFile}\".";
 
-                //m_ViewModel.ShowProgressBar = true;
+                    return;
+                }
 
-                //foreach (FileInfo wordListFile in wordListFiles)
-                //{
-                //    m_ViewModel.StatusLabelText = $"Reading in \"{wordListFile.Name}\".";
+                m_ViewModel.ShowProgressBar = true;
 
-                //    m_ViewModel.ReadFile(wordListFile.FullName);
-                //}
+                m_ViewModel.StatusLabelText = $"Loading \"{wordListFile}\".";
+
+                await m_ViewModel.WordList.Load(wordListFile);
+
+                m_ViewModel.StatusLabelText = $"Done loading. {m_ViewModel.WordList.Count:###,###,##0} entries.";
             }
             catch (Exception ex)
             {
@@ -120,7 +113,7 @@ namespace WordFinder.Views
             }
         }
 
-        private void ReadFileCommand_Executed(object sender, ExecutedRoutedEventArgs e)
+        private async void ReadFileCommand_Executed(object sender, ExecutedRoutedEventArgs e)
         {
             try
             {
@@ -145,7 +138,7 @@ namespace WordFinder.Views
 
                 m_ViewModel.StatusLabelText = $"Reading in \"{fi.Name}\".";
 
-                m_ViewModel.ReadFile(diag.FileName);
+                await m_ViewModel.ReadWordListTxtFile(diag.FileName);
             }
             catch (Exception ex)
             {
@@ -185,7 +178,7 @@ namespace WordFinder.Views
             }
         }
 
-        private void ReadDirectoryCommand_Executed(object sender, ExecutedRoutedEventArgs e)
+        private async void ReadDirectoryCommand_Executed(object sender, ExecutedRoutedEventArgs e)
         {
             try
             {
@@ -196,7 +189,7 @@ namespace WordFinder.Views
                 using (System.Windows.Forms.FolderBrowserDialog diag = new())
                 {
                     diag.SelectedPath = startPath;
-                    diag.Description = "Select the word list to append to the current dictionary";
+                    diag.Description = "Select the directory of word list(s) to append to the current list";
 
                     if (diag.ShowDialog() == System.Windows.Forms.DialogResult.OK)
                     {
@@ -218,7 +211,7 @@ namespace WordFinder.Views
                     {
                         m_ViewModel.StatusLabelText = $"Reading in \"{wordListFile.Name}\".";
 
-                        m_ViewModel.ReadFile(wordListFile.FullName);
+                        await m_ViewModel.ReadWordListTxtFile(wordListFile.FullName);
                     }
 
                 }
@@ -262,7 +255,7 @@ namespace WordFinder.Views
             }
         }
 
-        private void GenerateListCommand_Executed(object sender, ExecutedRoutedEventArgs e)
+        private async void GenerateListCommand_Executed(object sender, ExecutedRoutedEventArgs e)
         {
             try
             {
@@ -273,8 +266,20 @@ namespace WordFinder.Views
                     Title = "Save file as...",
                     AddExtension = true,
                     DefaultExt = "xml",
-                    FileName = $"{DateTime.Now:yyyy_MMM_dd}_word_finder_dictionary"
+                    FileName = "word_finder_dictionary"
                 };
+
+                var result = diag.ShowDialog();
+
+                if (result.HasValue == false ||
+                    result.Value == false)
+                {
+                    return;
+                }
+
+                await m_ViewModel.Save(diag.FileName);
+
+                m_ViewModel.StatusLabelText = $"Save file to \"{diag.FileName}\".";
             }
             catch (Exception ex)
             {
