@@ -8,6 +8,10 @@ using System.Xml;
 
 namespace WordFinder.Classes
 {
+    /// <summary>
+    /// Most of the word lists came from https://stackoverflow.com/questions/4456446/dictionary-text-file
+    /// I also used WordList and Project Gutenberg.
+    /// </summary>
     public class WordList : List<string>
     {
         #region Public Properties

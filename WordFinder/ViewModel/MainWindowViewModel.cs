@@ -140,6 +140,13 @@ namespace WordFinder.ViewModel
                     {
                         while ((line = rdr.ReadLine()) != null)
                         {
+                            if (line.All(char.IsLetter) == false)
+                            {
+                                ++skippedWords;
+
+                                continue;
+                            }
+
                             if (WordList.Contains(line, StringComparer.OrdinalIgnoreCase))
                             {
                                 ++skippedWords;

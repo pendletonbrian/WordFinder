@@ -196,25 +196,32 @@ namespace WordFinder.Views
                         directoryPath = diag.SelectedPath;
                     }
 
-                    if (string.IsNullOrWhiteSpace(directoryPath))
-                    {
-                        return;
-                    }
-
-                    var dataDirDI = new DirectoryInfo(directoryPath);
-
-                    var wordListFiles = dataDirDI.GetFiles("*.txt");
-
-                    m_ViewModel.ShowProgressBar = true;
-
-                    foreach (FileInfo wordListFile in wordListFiles)
-                    {
-                        m_ViewModel.StatusLabelText = $"Reading in \"{wordListFile.Name}\".";
-
-                        await m_ViewModel.ReadWordListTxtFile(wordListFile.FullName);
-                    }
-
                 }
+
+                if (string.IsNullOrWhiteSpace(directoryPath))
+                {
+                    return;
+                }
+
+                var dataDirDI = new DirectoryInfo(directoryPath);
+
+                var wordListFiles = dataDirDI.GetFiles("*.txt");
+
+                m_ViewModel.ShowProgressBar = true;
+
+                Stopwatch timer = Stopwatch.StartNew();
+
+                foreach (FileInfo wordListFile in wordListFiles)
+                {
+                    m_ViewModel.StatusLabelText = $"Reading in \"{wordListFile.Name}\".";
+
+                    await m_ViewModel.ReadWordListTxtFile(wordListFile.FullName);
+                }
+
+                timer.Stop();
+
+                m_ViewModel.StatusLabelText = $"Parsed {wordListFiles.Length:###,###,##0} " +
+                    $"files in {timer.Elapsed}, with {m_ViewModel.WordList.Count:###,###,##0} entries";
             }
             catch (Exception ex)
             {
@@ -266,7 +273,7 @@ namespace WordFinder.Views
                     Title = "Save file as...",
                     AddExtension = true,
                     DefaultExt = "xml",
-                    FileName = "word_finder_dictionary"
+                    FileName = MainWindowViewModel.WORD_LIST_FILE_NAME
                 };
 
                 var result = diag.ShowDialog();
@@ -279,7 +286,7 @@ namespace WordFinder.Views
 
                 await m_ViewModel.Save(diag.FileName);
 
-                m_ViewModel.StatusLabelText = $"Save file to \"{diag.FileName}\".";
+                m_ViewModel.StatusLabelText = $"Saved file to \"{diag.FileName}\".";
             }
             catch (Exception ex)
             {
