@@ -1,11 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Timers;
 using System.Windows.Input;
-using System.Xml;
 using WordFinder.Classes;
 
 namespace WordFinder.ViewModel
@@ -14,6 +13,7 @@ namespace WordFinder.ViewModel
     {
         #region Public Members
 
+        internal static readonly string BASE_TITLE_TEXT = " Word Finder";
         internal static readonly string WORD_LIST_FILE_NAME = "word_finder_word_list.xml";
 
         public static RoutedCommand ReadFileCommand = new RoutedCommand();
@@ -34,9 +34,18 @@ namespace WordFinder.ViewModel
 
         private bool m_IsBusy;
 
+        private readonly Timer m_StatusLabelTimer = new Timer(1000.0d);
+        private const int TIMER_NUMBER_OF_SECONDS = 8;
+        private int m_StatusLabelCount;
+
         #endregion Private Members
 
         #region Public Properties
+
+        public string TitleText
+        {
+            get => BASE_TITLE_TEXT;
+        }
 
         public int WordLength
         {
@@ -111,9 +120,25 @@ namespace WordFinder.ViewModel
         #region constructor
 
         public MainWindowViewModel()
-        { }
+        {
+            m_StatusLabelTimer.Elapsed += StatusLabelTimer_Elapsed;
+        }
 
         #endregion constructor
+
+        #region Private Methods
+
+        private void StatusLabelTimer_Elapsed(object sender, ElapsedEventArgs e)
+        {
+            if (++m_StatusLabelCount >= TIMER_NUMBER_OF_SECONDS)
+            {
+                m_StatusLabelTimer.Enabled = false;
+
+                StatusLabelText = string.Empty;
+            }
+        }
+
+        #endregion Private Methods
 
         #region Public Methods
 
@@ -125,6 +150,10 @@ namespace WordFinder.ViewModel
                 {
                     throw new FileNotFoundException($"The word list file \"{fullyQualifiedFilepath}\" does not exist.");
                 }
+
+                FileInfo fi = new FileInfo(fullyQualifiedFilepath);
+
+                SetStatusText($"Reading in \"{fi.Name}\".", false);
 
                 IsBusy = true;
 
@@ -167,8 +196,8 @@ namespace WordFinder.ViewModel
 
                 var fileInfo = new FileInfo(fullyQualifiedFilepath);
 
-                StatusLabelText = $"Added {lineCount:###,###,##0} words and skipped {skippedWords:###,###,##0} words from " +
-                    $"\"{fileInfo.Name}\" in {timer.Elapsed} for a total of {WordList.Count:###,###,##0}.";
+                SetStatusText($"Added {lineCount:###,###,##0} words and skipped {skippedWords:###,###,##0} words from " +
+                    $"\"{fileInfo.Name}\" in {timer.Elapsed} for a total of {WordList.Count:###,###,##0}.");
 
                 RaisePropertyChanged(nameof(WordList));
             }
@@ -185,6 +214,20 @@ namespace WordFinder.ViewModel
         internal async Task Save(string fullyQualifiedFilepath)
         {
             await WordList.Save(fullyQualifiedFilepath);
+        }
+
+        internal void SetStatusText(string text, bool autoRemove = true)
+        {
+            m_StatusLabelTimer.Enabled = false;
+
+            StatusLabelText = text;
+
+            if (autoRemove)
+            {
+                m_StatusLabelCount = 0;
+
+                m_StatusLabelTimer.Enabled = true;
+            }
         }
 
         #endregion Public Methods

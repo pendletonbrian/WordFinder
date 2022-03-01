@@ -9,7 +9,7 @@
         d:DataContext="{d:DesignInstance Type=vm:MainWindowViewModel}"
         WindowStartupLocation="CenterScreen"
         Loaded="Window_Loaded"
-        Title="MainWindow" Height="800" Width="1000">
+        Title="{Binding TitleText}" Height="800" Width="1000">
 
     <Window.Resources>
         <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" />
@@ -84,7 +84,7 @@
                 BorderBrush="LightBlue"
                 BorderThickness="1"
                 VerticalAlignment="Bottom"
-                Margin="2,1,2,2">
+                Margin="4,1,4,2">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />

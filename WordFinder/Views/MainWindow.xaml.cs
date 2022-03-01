@@ -15,8 +15,6 @@ namespace WordFinder.Views
     {
         #region Private Members
 
-        private static readonly string BASE_TITLE_TEXT = " Word Finder";
-
         private MainWindowViewModel m_ViewModel;
 
         #endregion Private Members
@@ -38,7 +36,7 @@ namespace WordFinder.Views
 
         internal void ShowErrorMessage(string msg)
         {
-            _ = MessageBox.Show(this, msg, BASE_TITLE_TEXT, MessageBoxButton.OK, MessageBoxImage.Error);
+            _ = MessageBox.Show(this, msg, MainWindowViewModel.BASE_TITLE_TEXT, MessageBoxButton.OK, MessageBoxImage.Error);
         }
 
         #endregion Public Methods
@@ -62,18 +60,22 @@ namespace WordFinder.Views
 
                 if (File.Exists(wordListFile) == false)
                 {
-                    m_ViewModel.StatusLabelText = $"Word list does not exist at \"{wordListFile}\".";
+                    m_ViewModel.SetStatusText($"Word list does not exist at \"{wordListFile}\".", false);
 
                     return;
                 }
 
                 m_ViewModel.ShowProgressBar = true;
 
-                m_ViewModel.StatusLabelText = $"Loading \"{wordListFile}\".";
+                m_ViewModel.SetStatusText($"Loading \"{wordListFile}\".");
+
+                Stopwatch timer = Stopwatch.StartNew();
 
                 await m_ViewModel.WordList.Load(wordListFile);
 
-                m_ViewModel.StatusLabelText = $"Done loading. {m_ViewModel.WordList.Count:###,###,##0} entries.";
+                timer.Stop();
+
+                m_ViewModel.SetStatusText($"Loaded {m_ViewModel.WordList.Count:###,###,##0} entries in {timer.Elapsed}.");
             }
             catch (Exception ex)
             {
@@ -134,17 +136,13 @@ namespace WordFinder.Views
 
                 m_ViewModel.ShowProgressBar = true;
 
-                FileInfo fi = new(diag.FileName);
-
-                m_ViewModel.StatusLabelText = $"Reading in \"{fi.Name}\".";
-
                 await m_ViewModel.ReadWordListTxtFile(diag.FileName);
             }
             catch (Exception ex)
             {
                 Debug.WriteLine(ex.ToString());
 
-                ShowErrorMessage($"Exception: \"{ex.Message}\".");
+                ShowErrorMessage($"Exception reading file: \"{ex.Message}\".");
             }
             finally
             {
@@ -213,21 +211,21 @@ namespace WordFinder.Views
 
                 foreach (FileInfo wordListFile in wordListFiles)
                 {
-                    m_ViewModel.StatusLabelText = $"Reading in \"{wordListFile.Name}\".";
+                    m_ViewModel.SetStatusText($"Reading in \"{wordListFile.Name}\".", false);
 
                     await m_ViewModel.ReadWordListTxtFile(wordListFile.FullName);
                 }
 
                 timer.Stop();
 
-                m_ViewModel.StatusLabelText = $"Parsed {wordListFiles.Length:###,###,##0} " +
-                    $"files in {timer.Elapsed}, with {m_ViewModel.WordList.Count:###,###,##0} entries";
+                m_ViewModel.SetStatusText($"Parsed {wordListFiles.Length:###,###,##0} " +
+                    $"files in {timer.Elapsed}, with {m_ViewModel.WordList.Count:###,###,##0} entries");
             }
             catch (Exception ex)
             {
                 Debug.WriteLine(ex.ToString());
 
-                ShowErrorMessage($"Exception: \"{ex.Message}\".");
+                ShowErrorMessage($"Exception reading files: \"{ex.Message}\".");
             }
             finally
             {
@@ -286,13 +284,13 @@ namespace WordFinder.Views
 
                 await m_ViewModel.Save(diag.FileName);
 
-                m_ViewModel.StatusLabelText = $"Saved file to \"{diag.FileName}\".";
+                m_ViewModel.SetStatusText($"Saved file to \"{diag.FileName}\".");
             }
             catch (Exception ex)
             {
                 Debug.WriteLine(ex.ToString());
 
-                ShowErrorMessage($"Exception: \"{ex.Message}\".");
+                ShowErrorMessage($"Exception saving the word list: \"{ex.Message}\".");
             }
             finally
             {

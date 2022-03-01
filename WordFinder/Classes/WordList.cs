@@ -59,7 +59,7 @@ namespace WordFinder.Classes
 
                     XmlHelper.AddAttr(doc, ref wordNode,
                                       XmlDefinitions.Word.A_Text,
-                                      word);
+                                      word.Trim().ToLower());
 
                     _ = rootNode.AppendChild(wordNode);
                 }
@@ -134,12 +134,6 @@ namespace WordFinder.Classes
                         {
                             Add(text);
                         }
-                    }
-
-                    if (documentCount != Count)
-                    {
-                        throw new XmlException($"The count attribute ({documentCount}) " +
-                            $"is different than the actual number of walks ({Count}).");
                     }
 
                     Sort(StringComparer.OrdinalIgnoreCase);
