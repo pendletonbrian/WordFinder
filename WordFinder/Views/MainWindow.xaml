@@ -9,7 +9,7 @@
         d:DataContext="{d:DesignInstance Type=vm:MainWindowViewModel}"
         WindowStartupLocation="CenterScreen"
         Loaded="Window_Loaded"
-        Title="{Binding TitleText}" Height="800" Width="1000">
+        Title="{Binding TitleText}" Height="600" Width="800">
 
     <Window.Resources>
         <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" />
@@ -25,6 +25,8 @@
         <CommandBinding Command="{x:Static vm:MainWindowViewModel.GenerateListCommand}"
                         CanExecute="GenerateListCommand_CanExecute"
                         Executed="GenerateListCommand_Executed" />
+        <CommandBinding Command="{x:Static vm:MainWindowViewModel.SearchCommand}"
+                        Executed="SearchCommand_Executed" />
     </Window.CommandBindings>
     
     <Grid>
@@ -37,7 +39,7 @@
             <!-- Menu -->
             <RowDefinition Height="Auto" />
 
-            <!-- Quick search -->
+            <!-- Search parameters -->
             <RowDefinition Height="Auto" />
 
             <!-- Main area -->
@@ -65,19 +67,90 @@
             </MenuItem>
         </Menu>
 
-        <!-- Search box -->
-        <TextBox Grid.Column="0"
-                 Grid.Row="1"
-                 Margin="4"
-                 HorizontalAlignment="Stretch"
-                 VerticalAlignment="Center"
-                 Text="Search box" />
+        <!-- Search parameters -->
+        <GroupBox Grid.Column="0"
+                  Grid.Row="1"
+                  Margin="4"
+                  HorizontalAlignment="Stretch"
+                  VerticalAlignment="Center"
+                  Header="Search parameters">
 
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="200" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <!-- Row 1: Number of characters in word -->
+                <TextBlock Grid.Column="0"
+                           Grid.Row="0"
+                           Margin="4"
+                           HorizontalAlignment="Right"
+                           Text="Number of characters:" />
+
+                <ComboBox Grid.Column="1"
+                          Grid.Row="0"
+                          Margin="4"
+                          Width="75"
+                          HorizontalAlignment="Left"
+                          ItemsSource="{Binding PossibleNumberOfChars}"
+                          SelectedValue="{Binding TargetWordLength}" />
+
+                <!-- Row 2: Included (but not in correct place) characters in word -->
+                <TextBlock Grid.Column="0"
+                           Grid.Row="1"
+                           Margin="4"
+                           HorizontalAlignment="Right"
+                           Text="Included characters:" />
+
+                <TextBox Grid.Column="1"
+                         Grid.Row="1"
+                         Margin="4"
+                         Width="300"
+                         HorizontalAlignment="Left"
+                         Text="{Binding IncludedLetters, UpdateSourceTrigger=PropertyChanged}" />
+
+                <!-- Row 3: Excluded characters in word -->
+                <TextBlock Grid.Column="0"
+                           Grid.Row="2"
+                           Margin="4"
+                           HorizontalAlignment="Right"
+                           Text="Excluded characters:" />
+
+                <TextBox Grid.Column="1"
+                         Grid.Row="2"
+                         Margin="4"
+                         Width="300"
+                         HorizontalAlignment="Left"
+                         Text="{Binding ExcludedLetters, UpdateSourceTrigger=PropertyChanged}" />
+
+                <Button Grid.Column="1"
+                        Grid.Row="3"
+                        Margin="4"
+                        Width="75"
+                        Height="26"
+                        Content="Search"
+                        HorizontalAlignment="Left"
+                        Command="{x:Static vm:MainWindowViewModel.SearchCommand}" />
+                
+            </Grid>
+        </GroupBox>
+
+
+        <!-- Main area -->
         <ListView Grid.Column="0"
                   Grid.Row="2"
                   HorizontalAlignment="Stretch"
                   VerticalAlignment="Stretch"
-                  Margin="4" />
+                  Margin="4"
+                  ItemsSource="{Binding WordList}" SelectionMode="Single"/>
 
         <Border Grid.Column="0"
                 Grid.Row="3"

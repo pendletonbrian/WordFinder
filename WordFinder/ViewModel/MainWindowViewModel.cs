@@ -1,15 +1,18 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Timers;
+using System.Windows.Data;
 using System.Windows.Input;
 using WordFinder.Classes;
 
 namespace WordFinder.ViewModel
 {
-    public class MainWindowViewModel : NotifyObject
+    public class MainWindowViewModel : NotifyObject, IDisposable
     {
         #region Public Members
 
@@ -19,12 +22,15 @@ namespace WordFinder.ViewModel
         public static RoutedCommand ReadFileCommand = new RoutedCommand();
         public static RoutedCommand ReadDirectoryCommand = new RoutedCommand();
         public static RoutedCommand GenerateListCommand = new RoutedCommand();
+        public static RoutedCommand SearchCommand = new RoutedCommand();
 
         #endregion Public Members
 
         #region Private Members
 
-        private int m_WordLength = 5;
+        private int m_TargetWordLength = 5;
+
+        private int m_MaxWordLength = 0;
 
         private WordList m_WordList = new();
 
@@ -38,29 +44,53 @@ namespace WordFinder.ViewModel
         private const int TIMER_NUMBER_OF_SECONDS = 8;
         private int m_StatusLabelCount;
 
+        private char[] m_IncludedChars;
+        private char[] m_ExcludedChars;
+
         #endregion Private Members
 
         #region Public Properties
 
+        /// <summary>
+        /// Text in the, uh.. Title bar.
+        /// </summary>
         public string TitleText
         {
             get => BASE_TITLE_TEXT;
         }
 
-        public int WordLength
+        /// <summary>
+        /// Number of characters in the word, yo.
+        /// </summary>
+        public int TargetWordLength
         {
-            get => m_WordLength;
+            get => m_TargetWordLength;
 
             set
             {
-                if (m_WordLength != value)
+                if (m_TargetWordLength != value)
                 {
-                    m_WordLength = value;
+                    m_TargetWordLength = value;
 
-                    RaisePropertyChanged(nameof(WordLength));
+                    RaisePropertyChanged(nameof(TargetWordLength));
                 }
             }
 
+        }
+
+        public int MaxWordLength
+        {
+            get => m_MaxWordLength;
+
+            private set
+            {
+                if (m_MaxWordLength != value)
+                {
+                    m_MaxWordLength = value;
+
+                    RaisePropertyChanged(nameof(MaxWordLength));
+                }
+            }
         }
 
         public bool ShowProgressBar
@@ -95,6 +125,9 @@ namespace WordFinder.ViewModel
             }
         }
 
+        /// <summary>
+        /// Is the view model processing anything?
+        /// </summary>
         public bool IsBusy
         {
             get => m_IsBusy;
@@ -110,10 +143,27 @@ namespace WordFinder.ViewModel
             }
         }
 
-        public WordList WordList
-        {
-            get => m_WordList;
-        }
+        /// <summary>
+        /// Like, the list of all the words, man.
+        /// </summary>
+        public WordList WordList => m_WordList;
+
+        public ObservableCollection<int> PossibleNumberOfChars { get; } = new ();
+
+        /// <summary>
+        /// Letters that are in the word, but not in any particular place.
+        /// </summary>
+        public string IncludedLetters { get; set; }
+
+        /// <summary>
+        /// Letters that are in the word, and in a particular place.
+        /// </summary>
+        public List<string> CorrectLetters { get; set; } = new(26);
+
+        /// <summary>
+        /// Letters that are not in the word at all.
+        /// </summary>
+        public string ExcludedLetters { get; set; }
 
         #endregion Public Properties
 
@@ -136,6 +186,38 @@ namespace WordFinder.ViewModel
 
                 StatusLabelText = string.Empty;
             }
+        }
+
+        private bool Search(object obj)
+        {
+            if (obj is null)
+            {
+                return false;
+            }
+
+            string word = obj.ToString();
+
+            if (word.Length != TargetWordLength)
+            {
+                return false;
+            }
+
+            if (word.IndexOfAny(m_ExcludedChars) >= 0)
+            {
+                return false;
+            }
+
+            if (m_IncludedChars.All(word.Contains) == false)
+            {
+                return false;
+            }
+
+            if (word.Contains("asty") == false)
+            {
+                return false;
+            }
+
+            return true;
         }
 
         #endregion Private Methods
@@ -216,6 +298,24 @@ namespace WordFinder.ViewModel
             await WordList.Save(fullyQualifiedFilepath);
         }
 
+        internal async Task Load(string fullyQualifiedFilepath)
+        {
+            await WordList.Load(fullyQualifiedFilepath);
+
+            MaxWordLength = WordList.MaxWordLength;
+
+            PossibleNumberOfChars.Clear();
+
+            for (int i = 3; i <= MaxWordLength; ++i)
+            {
+                PossibleNumberOfChars.Add(i);
+            }
+
+            RaisePropertyChanged(nameof(PossibleNumberOfChars));
+
+            PerformWordSearch();
+        }
+
         internal void SetStatusText(string text, bool autoRemove = true)
         {
             m_StatusLabelTimer.Enabled = false;
@@ -228,6 +328,74 @@ namespace WordFinder.ViewModel
 
                 m_StatusLabelTimer.Enabled = true;
             }
+        }
+
+        public void Dispose()
+        {
+            if (m_StatusLabelTimer != null)
+            {
+                m_StatusLabelTimer.Enabled = false;
+
+                m_StatusLabelTimer.Dispose();
+            }
+        }
+
+        internal void PerformWordSearch()
+        {
+            char[] seperators = { ',', ' ' };
+
+            string[] resultList;
+            int index = 0;
+
+            if (string.IsNullOrWhiteSpace(IncludedLetters) == false)
+            {
+                resultList = IncludedLetters.Split(seperators,
+                    StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+                m_IncludedChars = new char[resultList.Length];
+
+                foreach (var result in resultList)
+                {
+                    if (result.Length == 1)
+                    {
+                        m_IncludedChars[index++] = result[0];
+                    }
+                }
+
+            }
+            else
+            {
+                m_IncludedChars = Array.Empty<char>();
+            }
+
+            if (string.IsNullOrWhiteSpace(ExcludedLetters) == false)
+            {
+                resultList = ExcludedLetters.Split(seperators,
+                    StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+                m_ExcludedChars = new char[resultList.Length];
+
+                index = 0;
+
+                foreach (var result in resultList)
+                {
+                    if (result.Length == 1)
+                    {
+                        m_ExcludedChars[index++] = result[0];
+                    }
+                }
+
+            }
+            else
+            {
+                m_ExcludedChars = Array.Empty<char>();
+            }
+
+            var view = (ListCollectionView)CollectionViewSource.GetDefaultView(m_WordList);
+
+            view.Filter = Search;
+
+            SetStatusText($"There are { view.Count:###,###,##0} results.");
         }
 
         #endregion Public Methods

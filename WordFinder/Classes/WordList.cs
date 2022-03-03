@@ -1,8 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
 
@@ -16,11 +13,9 @@ namespace WordFinder.Classes
     {
         #region Public Properties
 
-        public DateTimeOffset LastUpdatedDate
-        {
-            get;
-            set;
-        }
+        public DateTimeOffset LastUpdatedDate { get; set; }
+
+        public int MaxWordLength { get; set; }
 
         #endregion Public Properties
 
@@ -81,6 +76,8 @@ namespace WordFinder.Classes
             {
                 Clear();
 
+                int maxLength = 0;
+
                 var doc = new XmlDocument();
 
                 doc.Load(fullyQualifiedFilepath);
@@ -125,6 +122,7 @@ namespace WordFinder.Classes
                     var wordNodeList = doc.SelectNodes($"//{XmlDefinitions.Word.E_Word}");
 
                     string text;
+                    int length;
 
                     foreach (XmlNode node in wordNodeList)
                     {
@@ -132,9 +130,18 @@ namespace WordFinder.Classes
 
                         if (string.IsNullOrWhiteSpace(text) == false)
                         {
+                            length = text.Length;
+
+                            if (length > maxLength)
+                            {
+                                maxLength = length;
+                            }
+
                             Add(text);
                         }
                     }
+
+                    MaxWordLength = maxLength;
 
                     Sort(StringComparer.OrdinalIgnoreCase);
                 });

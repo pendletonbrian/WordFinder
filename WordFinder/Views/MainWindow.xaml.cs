@@ -43,6 +43,23 @@ namespace WordFinder.Views
 
         #region Private Methods
 
+        private void SearchCommand_Executed(object sender, ExecutedRoutedEventArgs e)
+        {
+            try
+            {
+                m_ViewModel.PerformWordSearch();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.ToString());
+
+                ShowErrorMessage($"Exception searching list: \"{ex.Message}\".");
+            }
+            finally
+            {
+                m_ViewModel.ShowProgressBar = false;
+            }
+        }
         private async void Window_Loaded(object sender, RoutedEventArgs e)
         {
             try
@@ -71,7 +88,7 @@ namespace WordFinder.Views
 
                 Stopwatch timer = Stopwatch.StartNew();
 
-                await m_ViewModel.WordList.Load(wordListFile);
+                await m_ViewModel.Load(wordListFile);
 
                 timer.Stop();
 
@@ -299,5 +316,6 @@ namespace WordFinder.Views
         }
 
         #endregion Private Methods
+
     }
 }
