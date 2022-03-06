@@ -82,10 +82,22 @@
                 </Grid.ColumnDefinitions>
 
                 <Grid.RowDefinitions>
+                    
+                    <!-- Number of characters in ord -->
                     <RowDefinition Height="Auto" />
+                    
+                    <!-- Included characters -->
                     <RowDefinition Height="Auto" />
+                    
+                    <!-- Excluded characters -->
                     <RowDefinition Height="Auto" />
+                    
+                    <!-- Characters in exact place -->
                     <RowDefinition Height="Auto" />
+                    
+                    <!-- Search button -->
+                    <RowDefinition Height="Auto" />
+                    
                 </Grid.RowDefinitions>
 
                 <!-- Row 1: Number of characters in word -->
@@ -131,8 +143,23 @@
                          HorizontalAlignment="Left"
                          Text="{Binding ExcludedLetters, UpdateSourceTrigger=PropertyChanged}" />
 
+                <!-- Row 4: Exact characters in word -->
+                <TextBlock Grid.Column="0"
+                           Grid.Row="3"
+                           Margin="4"
+                           HorizontalAlignment="Right"
+                           Text="Exact characters:" />
+
+                <TextBox Grid.Column="1"
+                         Grid.Row="3"
+                         Margin="4"
+                         Width="300"
+                         HorizontalAlignment="Left"
+                         Text="{Binding ExactLetters, UpdateSourceTrigger=PropertyChanged}" />
+
+                <!-- Search button -->
                 <Button Grid.Column="1"
-                        Grid.Row="3"
+                        Grid.Row="4"
                         Margin="4"
                         Width="75"
                         Height="26"

@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Timers;
 using System.Windows.Data;
@@ -28,7 +29,7 @@ namespace WordFinder.ViewModel
 
         #region Private Members
 
-        private int m_TargetWordLength = 5;
+        private int m_TargetWordLength = 0;
 
         private int m_MaxWordLength = 0;
 
@@ -40,12 +41,14 @@ namespace WordFinder.ViewModel
 
         private bool m_IsBusy;
 
-        private readonly Timer m_StatusLabelTimer = new Timer(1000.0d);
+        private readonly Timer m_StatusLabelTimer = new(1000.0d);
         private const int TIMER_NUMBER_OF_SECONDS = 8;
         private int m_StatusLabelCount;
 
         private char[] m_IncludedChars;
         private char[] m_ExcludedChars;
+
+        private Regex m_RegEx;
 
         #endregion Private Members
 
@@ -158,7 +161,10 @@ namespace WordFinder.ViewModel
         /// <summary>
         /// Letters that are in the word, and in a particular place.
         /// </summary>
-        public List<string> CorrectLetters { get; set; } = new(26);
+        public string ExactLetters
+        {
+            get; set;
+        }
 
         /// <summary>
         /// Letters that are not in the word at all.
@@ -172,6 +178,8 @@ namespace WordFinder.ViewModel
         public MainWindowViewModel()
         {
             m_StatusLabelTimer.Elapsed += StatusLabelTimer_Elapsed;
+
+            TargetWordLength = 5;
         }
 
         #endregion constructor
@@ -212,12 +220,12 @@ namespace WordFinder.ViewModel
                 return false;
             }
 
-            if (word.Contains("asty") == false)
+            if (m_RegEx is null)
             {
-                return false;
+                return true;
             }
 
-            return true;
+            return m_RegEx.IsMatch(word);
         }
 
         #endregion Private Methods
@@ -389,6 +397,29 @@ namespace WordFinder.ViewModel
             else
             {
                 m_ExcludedChars = Array.Empty<char>();
+            }
+
+            string regex = string.Empty;
+
+            if (string.IsNullOrWhiteSpace(ExactLetters))
+            {
+                m_RegEx = null;
+            }
+            else
+            {
+                foreach (char c in ExactLetters)
+                {
+                    if (c.Equals('*'))
+                    {
+                        regex += "[a-zA-Z]";
+                    }
+                    else
+                    {
+                        regex += $"[{c}]";
+                    }
+                }
+
+                m_RegEx = new Regex(regex, RegexOptions.IgnoreCase | RegexOptions.Compiled);
             }
 
             var view = (ListCollectionView)CollectionViewSource.GetDefaultView(m_WordList);
