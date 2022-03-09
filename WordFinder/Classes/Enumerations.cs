@@ -42,9 +42,6 @@ namespace WordFinder.Classes
 
         public enum Letters
         {
-            [Description("None")]
-            None = 0,
-
             [Description("A")]
             A,
 
@@ -97,8 +94,8 @@ namespace WordFinder.Classes
             Q,
 
             [Description("R")]
-            R, 
-            
+            R,
+           
             [Description("S")]
             S,
 

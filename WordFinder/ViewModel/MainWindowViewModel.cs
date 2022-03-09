@@ -29,30 +29,94 @@ namespace WordFinder.ViewModel
 
         #region Private Members
 
-        private int m_TargetWordLength = 0;
+        /// <summary>
+        /// The length of the target word.
+        /// </summary>
+        private int m_TargetWordLength;
 
-        private int m_MaxWordLength = 0;
+        /// <summary>
+        /// The maximum possible length of a word, due to the dictionary's
+        /// constraints.
+        /// </summary>
+        private int m_MaxWordLength;
 
+        /// <summary>
+        /// ALL the words, yo!
+        /// </summary>
         private WordList m_WordList = new();
 
+        /// <summary>
+        /// Whether or not to show and start the progress bar.
+        /// </summary>
         private bool m_ShowProgressBar;
 
+        /// <summary>
+        /// The text to display in the status bar.
+        /// </summary>
         private string m_StatusLabelText = string.Empty;
 
+        /// <summary>
+        /// Some of the actions (generating the list) can take a long time.
+        /// This is used by the GUI to enable/disable commands if the long-running
+        /// actions are not done yet.
+        /// </summary>
         private bool m_IsBusy;
 
+        /// <summary>
+        /// Timer declaration and its interval.
+        /// </summary>
         private readonly Timer m_StatusLabelTimer = new(1000.0d);
+
+        /// <summary>
+        /// Maximum number of seconds to show a message.
+        /// </summary>
         private const int TIMER_NUMBER_OF_SECONDS = 8;
+
+        /// <summary>
+        /// The current number of seconds that a message has been shown. Gets
+        /// reset every time a new message is shown.
+        /// </summary>
         private int m_StatusLabelCount;
 
-        private char[] m_IncludedChars;
-        private char[] m_ExcludedChars;
+        /// <summary>
+        /// Used in the filtering method.
+        /// </summary>
+        private char[] m_IncludedChars = Array.Empty<char>();
 
+        /// <summary>
+        /// Used in the filtering method.
+        /// </summary>
+        private char[] m_ExcludedChars = Array.Empty<char>();
+
+        /// <summary>
+        /// Used in the filtering method to find words with letters in an exact position.
+        /// </summary>
         private Regex m_RegEx;
+
+        /// <summary>
+        /// Used in the GUI to select included/excluded letters.
+        /// </summary>
+        private readonly List<KeyValuePair<string, string>> m_SelectedLettersKeyValueList = new(26);
+
+        /// <summary>
+        /// The letters that the user selects to include words in the search.
+        /// </summary>
+        private List<Enumerations.Letters> m_IncludedLetters = new(26);
+
+        /// <summary>
+        /// The letters that the user selectes to exclude words from the search.
+        /// </summary>
+        private List<Enumerations.Letters> m_ExcludedLetters = new(26);
+
+        private List<string> m_ExactLetters;
 
         #endregion Private Members
 
         #region Public Properties
+
+        public List<KeyValuePair<string, string>> SelectedLettersKeyValueList => m_SelectedLettersKeyValueList;
+
+        public List<string> ExactLettersList => m_ExactLetters;
 
         /// <summary>
         /// Text in the, uh.. Title bar.
@@ -76,11 +140,18 @@ namespace WordFinder.ViewModel
                     m_TargetWordLength = value;
 
                     RaisePropertyChanged(nameof(TargetWordLength));
+
+                    m_ExactLetters = new List<string>(m_TargetWordLength);
+
+                    RaisePropertyChanged(nameof(ExactLettersList));
                 }
             }
 
         }
 
+        /// <summary>
+        /// The character count of the longest word in the list.
+        /// </summary>
         public int MaxWordLength
         {
             get => m_MaxWordLength;
@@ -96,6 +167,9 @@ namespace WordFinder.ViewModel
             }
         }
 
+        /// <summary>
+        /// Whether or not to show (and start) the status bar.
+        /// </summary>
         public bool ShowProgressBar
         {
             get => m_ShowProgressBar;
@@ -112,6 +186,9 @@ namespace WordFinder.ViewModel
             }
         }
 
+        /// <summary>
+        /// The text to display in the status label.
+        /// </summary>
         public string StatusLabelText
         {
             get { return m_StatusLabelText; }
@@ -151,25 +228,11 @@ namespace WordFinder.ViewModel
         /// </summary>
         public WordList WordList => m_WordList;
 
+        /// <summary>
+        /// The list of word lengths from which the user can select thier target
+        /// word's length.
+        /// </summary>
         public ObservableCollection<int> PossibleNumberOfChars { get; } = new ();
-
-        /// <summary>
-        /// Letters that are in the word, but not in any particular place.
-        /// </summary>
-        public string IncludedLetters { get; set; }
-
-        /// <summary>
-        /// Letters that are in the word, and in a particular place.
-        /// </summary>
-        public string ExactLetters
-        {
-            get; set;
-        }
-
-        /// <summary>
-        /// Letters that are not in the word at all.
-        /// </summary>
-        public string ExcludedLetters { get; set; }
 
         #endregion Public Properties
 
@@ -178,6 +241,8 @@ namespace WordFinder.ViewModel
         public MainWindowViewModel()
         {
             m_StatusLabelTimer.Elapsed += StatusLabelTimer_Elapsed;
+
+            m_SelectedLettersKeyValueList = Enumerations.GetEnumValueDescriptionPairs(typeof(Enumerations.Letters));
 
             TargetWordLength = 5;
         }
@@ -210,12 +275,14 @@ namespace WordFinder.ViewModel
                 return false;
             }
 
-            if (word.IndexOfAny(m_ExcludedChars) >= 0)
+            if (m_ExcludedChars.Length > 0 &&
+                word.IndexOfAny(m_ExcludedChars) >= 0)
             {
                 return false;
             }
 
-            if (m_IncludedChars.All(word.Contains) == false)
+            if (m_IncludedChars.Length > 0 &&
+                m_IncludedChars.All(word.Contains) == false)
             {
                 return false;
             }
@@ -350,23 +417,19 @@ namespace WordFinder.ViewModel
 
         internal void PerformWordSearch()
         {
-            char[] seperators = { ',', ' ' };
-
-            string[] resultList;
             int index = 0;
 
-            if (string.IsNullOrWhiteSpace(IncludedLetters) == false)
+            if (m_IncludedLetters.Count > 0)
             {
-                resultList = IncludedLetters.Split(seperators,
-                    StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                m_IncludedChars = new char[m_IncludedLetters.Count];
 
-                m_IncludedChars = new char[resultList.Length];
-
-                foreach (var result in resultList)
+                foreach (var enumValue in m_IncludedLetters)
                 {
-                    if (result.Length == 1)
+                    var description = enumValue.GetDescription();
+
+                    if (description.Length == 1)
                     {
-                        m_IncludedChars[index++] = result[0];
+                        m_IncludedChars[index++] = description.ToLower()[0];
                     }
                 }
 
@@ -376,20 +439,19 @@ namespace WordFinder.ViewModel
                 m_IncludedChars = Array.Empty<char>();
             }
 
-            if (string.IsNullOrWhiteSpace(ExcludedLetters) == false)
+            if (m_ExcludedLetters.Count > 0)
             {
-                resultList = ExcludedLetters.Split(seperators,
-                    StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-
-                m_ExcludedChars = new char[resultList.Length];
+                m_ExcludedChars = new char[m_ExcludedLetters.Count];
 
                 index = 0;
 
-                foreach (var result in resultList)
+                foreach (var enumValue in m_ExcludedLetters)
                 {
-                    if (result.Length == 1)
+                    var description = enumValue.GetDescription();
+
+                    if (description.Length == 1)
                     {
-                        m_ExcludedChars[index++] = result[0];
+                        m_ExcludedChars[index++] = description.ToLower()[0];
                     }
                 }
 
@@ -399,27 +461,65 @@ namespace WordFinder.ViewModel
                 m_ExcludedChars = Array.Empty<char>();
             }
 
+            bool errorFound = false;
+            bool characterFound = false;
             string regex = string.Empty;
 
-            if (string.IsNullOrWhiteSpace(ExactLetters))
+            if (ExactLettersList.Count == 0)
             {
                 m_RegEx = null;
             }
             else
             {
-                foreach (char c in ExactLetters)
+                foreach (string letter in ExactLettersList)
                 {
+                    if (string.IsNullOrWhiteSpace(letter))
+                    {
+                        continue;
+                    }
+
+                    char c = letter.ToLower()[0];
+
                     if (c.Equals('*'))
                     {
+                        // Look for any letter.
+
                         regex += "[a-zA-Z]";
                     }
                     else
                     {
-                        regex += $"[{c}]";
+                        if (char.IsLetter(c))
+                        {
+                            // Look for that specific letter.
+                            regex += $"[{c}]";
+
+                            characterFound = true;
+                        }
+                        else
+                        {
+                            SetStatusText($"The character \"{c}\" is not a letter.");
+
+                            errorFound = true;
+
+                            break;
+                        }
+
                     }
                 }
 
                 m_RegEx = new Regex(regex, RegexOptions.IgnoreCase | RegexOptions.Compiled);
+            }
+
+            if (errorFound)
+            {
+                regex = null;
+
+                return;
+            }
+
+            if (characterFound == false)
+            {
+                regex = null;
             }
 
             var view = (ListCollectionView)CollectionViewSource.GetDefaultView(m_WordList);
@@ -427,6 +527,46 @@ namespace WordFinder.ViewModel
             view.Filter = Search;
 
             SetStatusText($"There are { view.Count:###,###,##0} results.");
+        }
+
+        internal void AddExcludedLetter(Enumerations.Letters letter)
+        {
+            if (m_ExcludedLetters.Contains(letter))
+            {
+                return;
+            }
+
+            m_ExcludedLetters.Add(letter);
+        }
+
+        internal void RemoveExcludedLetter(Enumerations.Letters letter)
+        {
+            if (m_ExcludedLetters.Contains(letter) == false)
+            {
+                return;
+            }
+
+            m_ExcludedLetters.Remove(letter);
+        }
+
+        internal void AddIncludedLetter(Enumerations.Letters letter)
+        {
+            if (m_IncludedLetters.Contains(letter))
+            {
+                return;
+            }
+
+            m_IncludedLetters.Add(letter);
+        }
+
+        internal void RemoveIncludedLetter(Enumerations.Letters letter)
+        {
+            if (m_IncludedLetters.Contains(letter) == false)
+            {
+                return;
+            }
+
+            m_IncludedLetters.Remove(letter);
         }
 
         #endregion Public Methods

@@ -2,8 +2,10 @@
 using System.Diagnostics;
 using System.IO;
 using System.Windows;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using Microsoft.Win32;
+using WordFinder.Classes;
 using WordFinder.ViewModel;
 
 namespace WordFinder.Views
@@ -43,6 +45,78 @@ namespace WordFinder.Views
 
         #region Private Methods
 
+        private void ExcludedLetterButton_CheckedChanged(object sender, RoutedEventArgs e)
+        {
+            var btn = sender as ToggleButton;
+
+            if (btn is null)
+            {
+                return;
+            }
+
+            var isChecked = btn.IsChecked;
+
+            if (isChecked.HasValue == false)
+            {
+                return;
+            }
+
+            var enumName = btn.Content.ToString();
+
+            if (string.IsNullOrWhiteSpace(enumName))
+            {
+                return;
+            }
+
+            var enumValue = enumName.GetValueFromDescription<Enumerations.Letters>();
+
+            if (btn.IsChecked.Value)
+            {
+                m_ViewModel.AddExcludedLetter(enumValue);
+            }
+            else
+            {
+                m_ViewModel.RemoveExcludedLetter(enumValue);
+            }
+
+        }
+
+        private void IncludedLetterButton_CheckedChanged(object sender, RoutedEventArgs e)
+        {
+            var btn = sender as ToggleButton;
+
+            if (btn is null)
+            {
+                return;
+            }
+
+            var isChecked = btn.IsChecked;
+
+            if (isChecked.HasValue == false)
+            {
+                return;
+            }
+
+            var enumName = btn.Content.ToString();
+
+            if (string.IsNullOrWhiteSpace(enumName))
+            {
+                return;
+            }
+
+            var enumValue = enumName.GetValueFromDescription<Enumerations.Letters>();
+
+            if (btn.IsChecked.Value)
+            {
+                m_ViewModel.AddIncludedLetter(enumValue);
+            }
+            else
+            {
+                m_ViewModel.RemoveIncludedLetter(enumValue);
+            }
+
+        }
+
         private void SearchCommand_Executed(object sender, ExecutedRoutedEventArgs e)
         {
             try
@@ -60,6 +134,7 @@ namespace WordFinder.Views
                 m_ViewModel.ShowProgressBar = false;
             }
         }
+
         private async void Window_Loaded(object sender, RoutedEventArgs e)
         {
             try

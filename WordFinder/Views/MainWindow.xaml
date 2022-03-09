@@ -9,7 +9,7 @@
         d:DataContext="{d:DesignInstance Type=vm:MainWindowViewModel}"
         WindowStartupLocation="CenterScreen"
         Loaded="Window_Loaded"
-        Title="{Binding TitleText}" Height="600" Width="800">
+        Title="{Binding TitleText}" Height="600" Width="830">
 
     <Window.Resources>
         <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" />
@@ -73,6 +73,8 @@
                   Margin="4"
                   HorizontalAlignment="Stretch"
                   VerticalAlignment="Center"
+                  BorderBrush="Black"
+                  BorderThickness="2"
                   Header="Search parameters">
 
             <Grid>
@@ -83,7 +85,7 @@
 
                 <Grid.RowDefinitions>
                     
-                    <!-- Number of characters in ord -->
+                    <!-- Number of characters in word -->
                     <RowDefinition Height="Auto" />
                     
                     <!-- Included characters -->
@@ -97,7 +99,7 @@
                     
                     <!-- Search button -->
                     <RowDefinition Height="Auto" />
-                    
+
                 </Grid.RowDefinitions>
 
                 <!-- Row 1: Number of characters in word -->
@@ -116,57 +118,90 @@
                           SelectedValue="{Binding TargetWordLength}" />
 
                 <!-- Row 2: Included (but not in correct place) characters in word -->
-                <TextBlock Grid.Column="0"
-                           Grid.Row="1"
-                           Margin="4"
-                           HorizontalAlignment="Right"
-                           Text="Included characters:" />
-
-                <TextBox Grid.Column="1"
-                         Grid.Row="1"
-                         Margin="4"
-                         Width="300"
-                         HorizontalAlignment="Left"
-                         Text="{Binding IncludedLetters, UpdateSourceTrigger=PropertyChanged}" />
+                <GroupBox Grid.ColumnSpan="2"
+                          Grid.Row="1"
+                          BorderBrush="Green"
+                          Header="Included characters">
+                    <ItemsControl ItemsSource="{Binding SelectedLettersKeyValueList}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Orientation="Horizontal" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <ToggleButton Style="{StaticResource IncludedLetterButton}"
+                                              Content="{Binding Value}"
+                                              Checked="IncludedLetterButton_CheckedChanged"
+                                              Unchecked="IncludedLetterButton_CheckedChanged" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </GroupBox>
 
                 <!-- Row 3: Excluded characters in word -->
-                <TextBlock Grid.Column="0"
-                           Grid.Row="2"
-                           Margin="4"
-                           HorizontalAlignment="Right"
-                           Text="Excluded characters:" />
-
-                <TextBox Grid.Column="1"
-                         Grid.Row="2"
-                         Margin="4"
-                         Width="300"
-                         HorizontalAlignment="Left"
-                         Text="{Binding ExcludedLetters, UpdateSourceTrigger=PropertyChanged}" />
-
+                <GroupBox Grid.ColumnSpan="2"
+                          Grid.Row="2"
+                          BorderBrush="Red"
+                          Header="Excluded characters">
+                    <ItemsControl ItemsSource="{Binding SelectedLettersKeyValueList}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Orientation="Horizontal" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <ToggleButton Style="{StaticResource ExcludedLetterButton}"
+                                              Content="{Binding Value}"
+                                              Checked="ExcludedLetterButton_CheckedChanged"
+                                              Unchecked="ExcludedLetterButton_CheckedChanged" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </GroupBox>
+                
                 <!-- Row 4: Exact characters in word -->
-                <TextBlock Grid.Column="0"
-                           Grid.Row="3"
-                           Margin="4"
-                           HorizontalAlignment="Right"
-                           Text="Exact characters:" />
+                <GroupBox Grid.ColumnSpan="2"
+                          Grid.Row="3"
+                          Margin="4"
+                          Header="Exact characters">
+                    <ItemsControl ItemsSource="{Binding ExactLettersList}">
+                        
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Orientation="Horizontal" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
 
-                <TextBox Grid.Column="1"
-                         Grid.Row="3"
-                         Margin="4"
-                         Width="300"
-                         HorizontalAlignment="Left"
-                         Text="{Binding ExactLetters, UpdateSourceTrigger=PropertyChanged}" />
-
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <TextBox Height="26"
+                                         Width="26"
+                                         HorizontalAlignment="Center"
+                                         VerticalAlignment="Center" 
+                                         CharacterCasing="Upper"
+                                         Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <!--<TextBox Margin="4"
+                             Width="300"
+                             HorizontalAlignment="Left"
+                             CharacterCasing="Upper"
+                             Text="{Binding ExactLetters, UpdateSourceTrigger=PropertyChanged}" />-->
+                </GroupBox>
+                
                 <!-- Search button -->
-                <Button Grid.Column="1"
+                <Button Grid.ColumnSpan="2"
                         Grid.Row="4"
                         Margin="4"
                         Width="75"
                         Height="26"
                         Content="Search"
-                        HorizontalAlignment="Left"
+                        HorizontalAlignment="Center"
                         Command="{x:Static vm:MainWindowViewModel.SearchCommand}" />
-                
+
             </Grid>
         </GroupBox>
 
