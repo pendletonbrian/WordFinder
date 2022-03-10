@@ -163,11 +163,13 @@ namespace WordFinder.Views
 
                 Stopwatch timer = Stopwatch.StartNew();
 
-                await m_ViewModel.Load(wordListFile);
+                await m_ViewModel.LoadAsync(wordListFile);
 
                 timer.Stop();
 
                 m_ViewModel.SetStatusText($"Loaded {m_ViewModel.WordList.Count:###,###,##0} entries in {timer.Elapsed}.");
+
+                m_ViewModel.PerformWordSearch();
             }
             catch (Exception ex)
             {
@@ -228,7 +230,7 @@ namespace WordFinder.Views
 
                 m_ViewModel.ShowProgressBar = true;
 
-                await m_ViewModel.ReadWordListTxtFile(diag.FileName);
+                await m_ViewModel.ReadWordListTxtFileAsync(diag.FileName);
             }
             catch (Exception ex)
             {
@@ -305,7 +307,7 @@ namespace WordFinder.Views
                 {
                     m_ViewModel.SetStatusText($"Reading in \"{wordListFile.Name}\".", false);
 
-                    await m_ViewModel.ReadWordListTxtFile(wordListFile.FullName);
+                    await m_ViewModel.ReadWordListTxtFileAsync(wordListFile.FullName);
                 }
 
                 timer.Stop();
@@ -360,7 +362,7 @@ namespace WordFinder.Views
 
                 var diag = new SaveFileDialog
                 {
-                    Title = "Save file as...",
+                    Title = "SaveAsync file as...",
                     AddExtension = true,
                     DefaultExt = "xml",
                     FileName = MainWindowViewModel.WORD_LIST_FILE_NAME
@@ -374,7 +376,7 @@ namespace WordFinder.Views
                     return;
                 }
 
-                await m_ViewModel.Save(diag.FileName);
+                await m_ViewModel.SaveAsync(diag.FileName);
 
                 m_ViewModel.SetStatusText($"Saved file to \"{diag.FileName}\".");
             }
@@ -392,5 +394,9 @@ namespace WordFinder.Views
 
         #endregion Private Methods
 
+        private void ExactPositionLetters_LostFocus(object sender, RoutedEventArgs e)
+        {
+            int i = 0;
+        }
     }
 }

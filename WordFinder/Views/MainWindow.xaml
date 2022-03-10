@@ -13,6 +13,36 @@
 
     <Window.Resources>
         <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" />
+
+        <Style TargetType="TextBox"
+               x:Key="PositionLetterTextBox">
+            <Setter Property="Margin"
+                    Value="4" />
+            <Setter Property="Height"
+                    Value="26" />
+            <Setter Property="Width"
+                    Value="26" />
+            <Setter Property="HorizontalAlignment"
+                    Value="Center" />
+            <Setter Property="VerticalAlignment"
+                    Value="Center" />
+            <Setter Property="HorizontalContentAlignment"
+                    Value="Center" />
+            <Setter Property="VerticalContentAlignment"
+                    Value="Center" />
+            <Setter Property="CharacterCasing"
+                    Value="Upper" />
+            <Setter Property="MaxLength"
+                    Value="1" />
+
+            <Style.Triggers>
+                <Trigger Property="IsFocused"
+                         Value="True">
+                    <Setter Property="Background"
+                            Value="LightBlue" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
     </Window.Resources>
 
     <Window.CommandBindings>
@@ -120,6 +150,7 @@
                 <!-- Row 2: Included (but not in correct place) characters in word -->
                 <GroupBox Grid.ColumnSpan="2"
                           Grid.Row="1"
+                          Margin="2,4,2,4"
                           BorderBrush="Green"
                           Header="Included characters">
                     <ItemsControl ItemsSource="{Binding SelectedLettersKeyValueList}">
@@ -142,6 +173,7 @@
                 <!-- Row 3: Excluded characters in word -->
                 <GroupBox Grid.ColumnSpan="2"
                           Grid.Row="2"
+                          Margin="2,4,2,4"
                           BorderBrush="Red"
                           Header="Excluded characters">
                     <ItemsControl ItemsSource="{Binding SelectedLettersKeyValueList}">
@@ -164,9 +196,9 @@
                 <!-- Row 4: Exact characters in word -->
                 <GroupBox Grid.ColumnSpan="2"
                           Grid.Row="3"
-                          Margin="4"
+                          Margin="2,4,2,4"
                           Header="Exact characters">
-                    <ItemsControl ItemsSource="{Binding ExactLettersList}">
+                    <ItemsControl ItemsSource="{Binding ExactPositionLettersList}">
                         
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate>
@@ -176,20 +208,12 @@
 
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <TextBox Height="26"
-                                         Width="26"
-                                         HorizontalAlignment="Center"
-                                         VerticalAlignment="Center" 
-                                         CharacterCasing="Upper"
-                                         Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}" />
+                                <TextBox Style="{StaticResource PositionLetterTextBox}"
+                                         Text="{Binding Path=.}" LostFocus="ExactPositionLetters_LostFocus" />
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
-                    <!--<TextBox Margin="4"
-                             Width="300"
-                             HorizontalAlignment="Left"
-                             CharacterCasing="Upper"
-                             Text="{Binding ExactLetters, UpdateSourceTrigger=PropertyChanged}" />-->
+
                 </GroupBox>
                 
                 <!-- Search button -->

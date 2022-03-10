@@ -108,7 +108,7 @@ namespace WordFinder.ViewModel
         /// </summary>
         private List<Enumerations.Letters> m_ExcludedLetters = new(26);
 
-        private List<string> m_ExactLetters;
+        private ObservableCollection<string> m_ExactLetters = new ObservableCollection<string>();
 
         #endregion Private Members
 
@@ -116,7 +116,18 @@ namespace WordFinder.ViewModel
 
         public List<KeyValuePair<string, string>> SelectedLettersKeyValueList => m_SelectedLettersKeyValueList;
 
-        public List<string> ExactLettersList => m_ExactLetters;
+        public ObservableCollection<string> ExactPositionLettersList 
+        {
+            get => m_ExactLetters;
+
+
+            set
+            {
+                m_ExactLetters = value;
+
+                RaisePropertyChanged(nameof(ExactPositionLettersList));
+            }
+        }
 
         /// <summary>
         /// Text in the, uh.. Title bar.
@@ -141,9 +152,33 @@ namespace WordFinder.ViewModel
 
                     RaisePropertyChanged(nameof(TargetWordLength));
 
-                    m_ExactLetters = new List<string>(m_TargetWordLength);
+                    int diff = TargetWordLength - ExactPositionLettersList.Count;
 
-                    RaisePropertyChanged(nameof(ExactLettersList));
+                    if (diff == 0)
+                    {
+                        return;
+                    }
+
+                    if (diff > 0)
+                    {
+                        char A = 'A';
+                        char c;
+                        for (int i = 0; i < diff; ++i)
+                        {
+                            c = (char)(A + i);
+
+                            ExactPositionLettersList.Add($"{c}");
+                        }
+                    }
+                    else if (diff < 0)
+                    {
+                        for (int i = diff - 1; i > TargetWordLength; ++i)
+                        {
+                            ExactPositionLettersList.RemoveAt(i);
+                        }
+                    }
+
+                    RaisePropertyChanged(nameof(ExactPositionLettersList));
                 }
             }
 
@@ -243,8 +278,6 @@ namespace WordFinder.ViewModel
             m_StatusLabelTimer.Elapsed += StatusLabelTimer_Elapsed;
 
             m_SelectedLettersKeyValueList = Enumerations.GetEnumValueDescriptionPairs(typeof(Enumerations.Letters));
-
-            TargetWordLength = 5;
         }
 
         #endregion constructor
@@ -299,7 +332,7 @@ namespace WordFinder.ViewModel
 
         #region Public Methods
 
-        internal async Task ReadWordListTxtFile(string fullyQualifiedFilepath)
+        internal async Task ReadWordListTxtFileAsync(string fullyQualifiedFilepath)
         {
             try
             {
@@ -368,14 +401,14 @@ namespace WordFinder.ViewModel
             }
         }
 
-        internal async Task Save(string fullyQualifiedFilepath)
+        internal async Task SaveAsync(string fullyQualifiedFilepath)
         {
-            await WordList.Save(fullyQualifiedFilepath);
+            await WordList.SaveAsync(fullyQualifiedFilepath);
         }
 
-        internal async Task Load(string fullyQualifiedFilepath)
+        internal async Task LoadAsync(string fullyQualifiedFilepath)
         {
-            await WordList.Load(fullyQualifiedFilepath);
+            await WordList.LoadAsync(fullyQualifiedFilepath);
 
             MaxWordLength = WordList.MaxWordLength;
 
@@ -388,7 +421,7 @@ namespace WordFinder.ViewModel
 
             RaisePropertyChanged(nameof(PossibleNumberOfChars));
 
-            PerformWordSearch();
+            TargetWordLength = 5;
         }
 
         internal void SetStatusText(string text, bool autoRemove = true)
@@ -465,13 +498,13 @@ namespace WordFinder.ViewModel
             bool characterFound = false;
             string regex = string.Empty;
 
-            if (ExactLettersList.Count == 0)
+            if (ExactPositionLettersList.Count == 0)
             {
                 m_RegEx = null;
             }
             else
             {
-                foreach (string letter in ExactLettersList)
+                foreach (string letter in ExactPositionLettersList)
                 {
                     if (string.IsNullOrWhiteSpace(letter))
                     {
@@ -480,7 +513,8 @@ namespace WordFinder.ViewModel
 
                     char c = letter.ToLower()[0];
 
-                    if (c.Equals('*'))
+                    if (c.Equals('*') ||
+                        char.IsWhiteSpace(c))
                     {
                         // Look for any letter.
 

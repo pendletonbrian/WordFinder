@@ -19,7 +19,7 @@ namespace WordFinder.Classes
 
         #endregion Public Properties
 
-        internal async Task Save(string fullyQualifiedFilepath)
+        internal async Task SaveAsync(string fullyQualifiedFilepath)
         {
             if (string.IsNullOrWhiteSpace(fullyQualifiedFilepath))
             {
@@ -65,7 +65,7 @@ namespace WordFinder.Classes
             });
         }
 
-        internal async Task Load(string fullyQualifiedFilepath)
+        internal async Task LoadAsync(string fullyQualifiedFilepath)
         {
             if (string.IsNullOrWhiteSpace(fullyQualifiedFilepath))
             {
