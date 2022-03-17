@@ -169,7 +169,6 @@ namespace WordFinder.Views
 
                 m_ViewModel.SetStatusText($"Loaded {m_ViewModel.WordList.Count:###,###,##0} entries in {timer.Elapsed}.");
 
-                m_ViewModel.PerformWordSearch();
             }
             catch (Exception ex)
             {
