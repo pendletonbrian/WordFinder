@@ -114,20 +114,20 @@
                 </Grid.ColumnDefinitions>
 
                 <Grid.RowDefinitions>
-                    
-                    <!-- Number of characters in word -->
+
+                    <!-- Row 1: Number of characters in word -->
                     <RowDefinition Height="Auto" />
-                    
-                    <!-- Included characters -->
+
+                    <!-- Row 2: Included characters -->
                     <RowDefinition Height="Auto" />
-                    
-                    <!-- Excluded characters -->
+
+                    <!-- Row 3: Excluded characters -->
                     <RowDefinition Height="Auto" />
-                    
-                    <!-- Characters in exact place -->
+
+                    <!-- Row 4: Characters in exact position -->
                     <RowDefinition Height="Auto" />
-                    
-                    <!-- Search button -->
+
+                    <!-- Last Row: Search button -->
                     <RowDefinition Height="Auto" />
 
                 </Grid.RowDefinitions>
@@ -152,7 +152,7 @@
                           Grid.Row="1"
                           Margin="2,4,2,4"
                           BorderBrush="Green"
-                          Header="Included characters">
+                          Header="Included characters somewhere in word">
                     <ItemsControl ItemsSource="{Binding SelectedLettersKeyValueList}">
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate>
@@ -175,7 +175,7 @@
                           Grid.Row="2"
                           Margin="2,4,2,4"
                           BorderBrush="Red"
-                          Header="Excluded characters">
+                          Header="Characters NOT anywhere in word">
                     <ItemsControl ItemsSource="{Binding SelectedLettersKeyValueList}">
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate>
@@ -197,8 +197,9 @@
                 <GroupBox Grid.ColumnSpan="2"
                           Grid.Row="3"
                           Margin="2,4,2,4"
-                          Header="Exact characters">
-                    <ItemsControl ItemsSource="{Binding ExactPositionLettersList}">
+                          BorderBrush="Green"
+                          Header="Characters in exact position">
+                    <ItemsControl ItemsSource="{Binding ExactIncludedPositionLettersList}">
                         
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate>
@@ -209,14 +210,14 @@
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
                                 <TextBox Style="{StaticResource PositionLetterTextBox}"
-                                         Text="{Binding Path=.}" LostFocus="ExactPositionLetters_LostFocus" />
+                                         Text="{Binding Path=Text}" />
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
 
                 </GroupBox>
-                
-                <!-- Search button -->
+
+                <!-- Last Row: Search button -->
                 <Button Grid.ColumnSpan="2"
                         Grid.Row="4"
                         Margin="4"
