@@ -108,7 +108,7 @@ namespace WordFinder.ViewModel
         /// </summary>
         private List<Enumerations.Letters> m_ExcludedLetters = new(26);
 
-        private ObservableCollection<string> m_ExactLetters = new ObservableCollection<string>();
+        private ExactLetterCollection m_ExactIncludedLetters = new();
 
         #endregion Private Members
 
@@ -116,16 +116,16 @@ namespace WordFinder.ViewModel
 
         public List<KeyValuePair<string, string>> SelectedLettersKeyValueList => m_SelectedLettersKeyValueList;
 
-        public ObservableCollection<string> ExactPositionLettersList 
+        public ExactLetterCollection ExactIncludedPositionLettersList 
         {
-            get => m_ExactLetters;
+            get => m_ExactIncludedLetters;
 
 
             set
             {
-                m_ExactLetters = value;
+                m_ExactIncludedLetters = value;
 
-                RaisePropertyChanged(nameof(ExactPositionLettersList));
+                RaisePropertyChanged(nameof(ExactIncludedPositionLettersList));
             }
         }
 
@@ -152,7 +152,7 @@ namespace WordFinder.ViewModel
 
                     RaisePropertyChanged(nameof(TargetWordLength));
 
-                    int diff = TargetWordLength - ExactPositionLettersList.Count;
+                    int diff = TargetWordLength - ExactIncludedPositionLettersList.Count;
 
                     if (diff == 0)
                     {
@@ -161,24 +161,21 @@ namespace WordFinder.ViewModel
 
                     if (diff > 0)
                     {
-                        char A = 'A';
-                        char c;
                         for (int i = 0; i < diff; ++i)
                         {
-                            c = (char)(A + i);
-
-                            ExactPositionLettersList.Add($"{c}");
+                            ExactIncludedPositionLettersList.Add(new PositionalLetter(i));
                         }
                     }
                     else if (diff < 0)
                     {
                         for (int i = diff - 1; i > TargetWordLength; ++i)
                         {
-                            ExactPositionLettersList.RemoveAt(i);
+                            ExactIncludedPositionLettersList.RemoveAt(i);
                         }
                     }
 
-                    RaisePropertyChanged(nameof(ExactPositionLettersList));
+                    RaisePropertyChanged(nameof(ExactIncludedPositionLettersList));
+
                 }
             }
 
@@ -498,48 +495,51 @@ namespace WordFinder.ViewModel
             bool characterFound = false;
             string regex = string.Empty;
 
-            if (ExactPositionLettersList.Count == 0)
+            if (ExactIncludedPositionLettersList.Count == 0)
             {
                 m_RegEx = null;
             }
             else
             {
-                foreach (string letter in ExactPositionLettersList)
+                foreach (var letter in ExactIncludedPositionLettersList)
                 {
-                    if (string.IsNullOrWhiteSpace(letter))
+                    if (string.IsNullOrWhiteSpace(letter.Text))
                     {
-                        continue;
-                    }
-
-                    char c = letter.ToLower()[0];
-
-                    if (c.Equals('*') ||
-                        char.IsWhiteSpace(c))
-                    {
-                        // Look for any letter.
-
                         regex += "[a-zA-Z]";
                     }
                     else
                     {
-                        if (char.IsLetter(c))
-                        {
-                            // Look for that specific letter.
-                            regex += $"[{c}]";
+                        char c = letter.Text.ToLower()[0];
 
-                            characterFound = true;
+                        if (c.Equals('*'))
+                        {
+                            // Look for any letter.
+
+                            regex += "[a-zA-Z]";
                         }
                         else
                         {
-                            SetStatusText($"The character \"{c}\" is not a letter.");
+                            if (char.IsLetter(c))
+                            {
+                                // Look for that specific letter.
+                                regex += $"[{c}]";
 
-                            errorFound = true;
+                                characterFound = true;
+                            }
+                            else
+                            {
+                                SetStatusText($"The character \"{c}\" is not a letter.");
 
-                            break;
+                                errorFound = true;
+
+                                break;
+                            }
+
                         }
 
-                    }
-                }
+                    } // Text is not null
+
+                }// foreach letter in ExactPositionLettersList
 
                 m_RegEx = new Regex(regex, RegexOptions.IgnoreCase | RegexOptions.Compiled);
             }

@@ -393,9 +393,5 @@ namespace WordFinder.Views
 
         #endregion Private Methods
 
-        private void ExactPositionLetters_LostFocus(object sender, RoutedEventArgs e)
-        {
-            int i = 0;
-        }
     }
 }

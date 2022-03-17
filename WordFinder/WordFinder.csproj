@@ -9,6 +9,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Classes\LetterButton.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Folder Include="data\" />
   </ItemGroup>
 
