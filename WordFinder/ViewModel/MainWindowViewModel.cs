@@ -17,46 +17,55 @@ namespace WordFinder.ViewModel
     {
         #region Public Members
 
+        public static RoutedCommand AddWordCommand = new();
+        public static RoutedCommand GenerateListCommand = new();
+        public static RoutedCommand ReadDirectoryCommand = new();
+        public static RoutedCommand ReadFileCommand = new();
+        public static RoutedCommand RemoveWordCommand = new();
+        public static RoutedCommand SearchCommand = new();
         internal static readonly string BASE_TITLE_TEXT = " Word Finder";
         internal static readonly string WORD_LIST_FILE_NAME = "word_finder_word_list.xml";
-
-        public static RoutedCommand ReadFileCommand = new();
-        public static RoutedCommand ReadDirectoryCommand = new();
-        public static RoutedCommand GenerateListCommand = new();
-        public static RoutedCommand SearchCommand = new();
-
-        public static RoutedCommand AddWordCommand = new();
-        public static RoutedCommand RemoveWordCommand = new();
 
         #endregion Public Members
 
         #region Private Members
 
         /// <summary>
-        /// The length of the target word.
+        /// Maximum number of seconds to show a message.
         /// </summary>
-        private int m_TargetWordLength;
+        private const int TIMER_NUMBER_OF_SECONDS = 8;
 
         /// <summary>
-        /// The maximum possible length of a word, due to the dictionary's
-        /// constraints.
+        /// Used in the GUI to select included/excluded letters.
         /// </summary>
-        private int m_MaxWordLength;
+        private readonly List<KeyValuePair<string, string>> m_SelectedLettersKeyValueList = new(26);
 
         /// <summary>
-        /// ALL the words, yo!
+        /// Timer declaration and its interval.
         /// </summary>
-        private WordList m_WordList = new();
+        private readonly Timer m_StatusLabelTimer = new(1000.0d);
+
+        private ExactLetterCollection m_ExactIncludedLetters = new();
 
         /// <summary>
-        /// Whether or not to show and start the progress bar.
+        /// Used in the filtering method.
         /// </summary>
-        private bool m_ShowProgressBar;
+        private char[] m_ExcludedChars = Array.Empty<char>();
 
         /// <summary>
-        /// The text to display in the status bar.
+        /// The letters that the user selectes to exclude words from the search.
         /// </summary>
-        private string m_StatusLabelText = string.Empty;
+        private List<Enumerations.Letters> m_ExcludedLetters = new(26);
+
+        /// <summary>
+        /// Used in the filtering method.
+        /// </summary>
+        private char[] m_IncludedChars = Array.Empty<char>();
+
+        /// <summary>
+        /// The letters that the user selects to include words in the search.
+        /// </summary>
+        private List<Enumerations.Letters> m_IncludedLetters = new(26);
 
         /// <summary>
         /// Some of the actions (generating the list) can take a long time.
@@ -66,14 +75,20 @@ namespace WordFinder.ViewModel
         private bool m_IsBusy;
 
         /// <summary>
-        /// Timer declaration and its interval.
+        /// The maximum possible length of a word, due to the dictionary's
+        /// constraints.
         /// </summary>
-        private readonly Timer m_StatusLabelTimer = new(1000.0d);
+        private int m_MaxWordLength;
 
         /// <summary>
-        /// Maximum number of seconds to show a message.
+        /// Used in the filtering method to find words with letters in an exact position.
         /// </summary>
-        private const int TIMER_NUMBER_OF_SECONDS = 8;
+        private Regex m_RegEx;
+
+        /// <summary>
+        /// Whether or not to show and start the progress bar.
+        /// </summary>
+        private bool m_ShowProgressBar;
 
         /// <summary>
         /// The current number of seconds that a message has been shown. Gets
@@ -82,47 +97,27 @@ namespace WordFinder.ViewModel
         private int m_StatusLabelCount;
 
         /// <summary>
-        /// Used in the filtering method.
+        /// The text to display in the status bar.
         /// </summary>
-        private char[] m_IncludedChars = Array.Empty<char>();
+        private string m_StatusLabelText = string.Empty;
 
         /// <summary>
-        /// Used in the filtering method.
+        /// The length of the target word.
         /// </summary>
-        private char[] m_ExcludedChars = Array.Empty<char>();
+        private int m_TargetWordLength;
 
         /// <summary>
-        /// Used in the filtering method to find words with letters in an exact position.
+        /// ALL the words, yo!
         /// </summary>
-        private Regex m_RegEx;
-
-        /// <summary>
-        /// Used in the GUI to select included/excluded letters.
-        /// </summary>
-        private readonly List<KeyValuePair<string, string>> m_SelectedLettersKeyValueList = new(26);
-
-        /// <summary>
-        /// The letters that the user selects to include words in the search.
-        /// </summary>
-        private List<Enumerations.Letters> m_IncludedLetters = new(26);
-
-        /// <summary>
-        /// The letters that the user selectes to exclude words from the search.
-        /// </summary>
-        private List<Enumerations.Letters> m_ExcludedLetters = new(26);
-
-        private ExactLetterCollection m_ExactIncludedLetters = new();
+        private WordList m_WordList = new();
 
         #endregion Private Members
 
         #region Public Properties
 
-        public List<KeyValuePair<string, string>> SelectedLettersKeyValueList => m_SelectedLettersKeyValueList;
-
-        public ExactLetterCollection ExactIncludedPositionLettersList 
+        public ExactLetterCollection ExactIncludedPositionLettersList
         {
             get => m_ExactIncludedLetters;
-
 
             set
             {
@@ -133,11 +128,85 @@ namespace WordFinder.ViewModel
         }
 
         /// <summary>
-        /// Text in the, uh.. Title bar.
+        /// Is the view model processing anything?
         /// </summary>
-        public string TitleText
+        public bool IsBusy
         {
-            get => BASE_TITLE_TEXT;
+            get => m_IsBusy;
+
+            private set
+            {
+                if (m_IsBusy != value)
+                {
+                    m_IsBusy = value;
+
+                    RaisePropertyChanged(nameof(IsBusy));
+                }
+            }
+        }
+
+        /// <summary>
+        /// The character count of the longest word in the list.
+        /// </summary>
+        public int MaxWordLength
+        {
+            get => m_MaxWordLength;
+
+            private set
+            {
+                if (m_MaxWordLength != value)
+                {
+                    m_MaxWordLength = value;
+
+                    RaisePropertyChanged(nameof(MaxWordLength));
+                }
+            }
+        }
+
+        /// <summary>
+        /// The list of word lengths from which the user can select thier target
+        /// word's length.
+        /// </summary>
+        public ObservableCollection<int> PossibleNumberOfChars { get; } = new();
+
+        public List<KeyValuePair<string, string>> SelectedLettersKeyValueList => m_SelectedLettersKeyValueList;
+
+        /// <summary>
+        /// Whether or not to show (and start) the status bar.
+        /// </summary>
+        public bool ShowProgressBar
+        {
+            get => m_ShowProgressBar;
+
+            set
+            {
+                if (m_ShowProgressBar != value)
+                {
+                    m_ShowProgressBar = value;
+
+                    RaisePropertyChanged(nameof(ShowProgressBar));
+                }
+
+            }
+        }
+
+        /// <summary>
+        /// The text to display in the status label.
+        /// </summary>
+        public string StatusLabelText
+        {
+            get { return m_StatusLabelText; }
+
+            set
+            {
+                if (string.IsNullOrWhiteSpace(m_StatusLabelText) ||
+                    m_StatusLabelText.Equals(value, StringComparison.Ordinal) == false)
+                {
+                    m_StatusLabelText = value;
+
+                    RaisePropertyChanged(nameof(StatusLabelText));
+                }
+            }
         }
 
         /// <summary>
@@ -185,89 +254,17 @@ namespace WordFinder.ViewModel
         }
 
         /// <summary>
-        /// The character count of the longest word in the list.
+        /// Text in the, uh.. Title bar.
         /// </summary>
-        public int MaxWordLength
+        public string TitleText
         {
-            get => m_MaxWordLength;
-
-            private set
-            {
-                if (m_MaxWordLength != value)
-                {
-                    m_MaxWordLength = value;
-
-                    RaisePropertyChanged(nameof(MaxWordLength));
-                }
-            }
-        }
-
-        /// <summary>
-        /// Whether or not to show (and start) the status bar.
-        /// </summary>
-        public bool ShowProgressBar
-        {
-            get => m_ShowProgressBar;
-
-            set
-            {
-                if (m_ShowProgressBar != value)
-                {
-                    m_ShowProgressBar = value;
-
-                    RaisePropertyChanged(nameof(ShowProgressBar));
-                }
-
-            }
-        }
-
-        /// <summary>
-        /// The text to display in the status label.
-        /// </summary>
-        public string StatusLabelText
-        {
-            get { return m_StatusLabelText; }
-
-            set
-            {
-                if (string.IsNullOrWhiteSpace(m_StatusLabelText) ||
-                    m_StatusLabelText.Equals(value, StringComparison.Ordinal) == false)
-                {
-                    m_StatusLabelText = value;
-
-                    RaisePropertyChanged(nameof(StatusLabelText));
-                }
-            }
-        }
-
-        /// <summary>
-        /// Is the view model processing anything?
-        /// </summary>
-        public bool IsBusy
-        {
-            get => m_IsBusy;
-
-            private set
-            {
-                if (m_IsBusy != value)
-                {
-                    m_IsBusy = value;
-
-                    RaisePropertyChanged(nameof(IsBusy));
-                }
-            }
+            get => BASE_TITLE_TEXT;
         }
 
         /// <summary>
         /// Like, the list of all the words, man.
         /// </summary>
         public WordList WordList => m_WordList;
-
-        /// <summary>
-        /// The list of word lengths from which the user can select thier target
-        /// word's length.
-        /// </summary>
-        public ObservableCollection<int> PossibleNumberOfChars { get; } = new ();
 
         #endregion Public Properties
 
@@ -283,16 +280,6 @@ namespace WordFinder.ViewModel
         #endregion constructor
 
         #region Private Methods
-
-        private void StatusLabelTimer_Elapsed(object sender, ElapsedEventArgs e)
-        {
-            if (++m_StatusLabelCount >= TIMER_NUMBER_OF_SECONDS)
-            {
-                m_StatusLabelTimer.Enabled = false;
-
-                StatusLabelText = string.Empty;
-            }
-        }
 
         private bool Search(object obj)
         {
@@ -328,82 +315,48 @@ namespace WordFinder.ViewModel
             return m_RegEx.IsMatch(word);
         }
 
+        private void StatusLabelTimer_Elapsed(object sender, ElapsedEventArgs e)
+        {
+            if (++m_StatusLabelCount >= TIMER_NUMBER_OF_SECONDS)
+            {
+                m_StatusLabelTimer.Enabled = false;
+
+                StatusLabelText = string.Empty;
+            }
+        }
+
         #endregion Private Methods
 
         #region Public Methods
 
-        internal async Task ReadWordListTxtFileAsync(string fullyQualifiedFilepath)
+        public void Dispose()
         {
-            try
+            if (m_StatusLabelTimer != null)
             {
-                if (File.Exists(fullyQualifiedFilepath) == false)
-                {
-                    throw new FileNotFoundException($"The word list file \"{fullyQualifiedFilepath}\" does not exist.");
-                }
+                m_StatusLabelTimer.Enabled = false;
 
-                FileInfo fi = new FileInfo(fullyQualifiedFilepath);
-
-                SetStatusText($"Reading in \"{fi.Name}\".", false);
-
-                IsBusy = true;
-
-                Stopwatch timer = Stopwatch.StartNew();
-
-                int lineCount = 0;
-                int skippedWords = 0;
-                string line;
-
-                await Task.Run(() =>
-                {
-                    using (StreamReader rdr = new(fullyQualifiedFilepath))
-                    {
-                        while ((line = rdr.ReadLine()) != null)
-                        {
-                            if (line.All(char.IsLetter) == false)
-                            {
-                                ++skippedWords;
-
-                                continue;
-                            }
-
-                            if (WordList.Contains(line, StringComparer.OrdinalIgnoreCase))
-                            {
-                                ++skippedWords;
-
-                                continue;
-                            }
-
-                            ++lineCount;
-
-                            WordList.Add(line);
-                        }
-                    }
-
-                    WordList.Sort();
-                });
-
-                timer.Stop();
-
-                var fileInfo = new FileInfo(fullyQualifiedFilepath);
-
-                SetStatusText($"Added {lineCount:###,###,##0} words and skipped {skippedWords:###,###,##0} words from " +
-                    $"\"{fileInfo.Name}\" in {timer.Elapsed} for a total of {WordList.Count:###,###,##0}.");
-
-                RaisePropertyChanged(nameof(WordList));
-            }
-            catch
-            {
-                throw;
-            }
-            finally
-            {
-                IsBusy = false;
+                m_StatusLabelTimer.Dispose();
             }
         }
 
-        internal async Task SaveAsync(string fullyQualifiedFilepath)
+        internal void AddExcludedLetter(Enumerations.Letters letter)
         {
-            await WordList.SaveAsync(fullyQualifiedFilepath);
+            if (m_ExcludedLetters.Contains(letter))
+            {
+                return;
+            }
+
+            m_ExcludedLetters.Add(letter);
+        }
+
+        internal void AddIncludedLetter(Enumerations.Letters letter)
+        {
+            if (m_IncludedLetters.Contains(letter))
+            {
+                return;
+            }
+
+            m_IncludedLetters.Add(letter);
         }
 
         internal async Task LoadAsync(string fullyQualifiedFilepath)
@@ -422,30 +375,6 @@ namespace WordFinder.ViewModel
             RaisePropertyChanged(nameof(PossibleNumberOfChars));
 
             TargetWordLength = 5;
-        }
-
-        internal void SetStatusText(string text, bool autoRemove = true)
-        {
-            m_StatusLabelTimer.Enabled = false;
-
-            StatusLabelText = text;
-
-            if (autoRemove)
-            {
-                m_StatusLabelCount = 0;
-
-                m_StatusLabelTimer.Enabled = true;
-            }
-        }
-
-        public void Dispose()
-        {
-            if (m_StatusLabelTimer != null)
-            {
-                m_StatusLabelTimer.Enabled = false;
-
-                m_StatusLabelTimer.Dispose();
-            }
         }
 
         internal void PerformWordSearch()
@@ -566,14 +495,73 @@ namespace WordFinder.ViewModel
             SetStatusText($"There are { view.Count:###,###,##0} results.");
         }
 
-        internal void AddExcludedLetter(Enumerations.Letters letter)
+        internal async Task ReadWordListTxtFileAsync(string fullyQualifiedFilepath)
         {
-            if (m_ExcludedLetters.Contains(letter))
+            try
             {
-                return;
-            }
+                if (File.Exists(fullyQualifiedFilepath) == false)
+                {
+                    throw new FileNotFoundException($"The word list file \"{fullyQualifiedFilepath}\" does not exist.");
+                }
 
-            m_ExcludedLetters.Add(letter);
+                FileInfo fi = new FileInfo(fullyQualifiedFilepath);
+
+                SetStatusText($"Reading in \"{fi.Name}\".", false);
+
+                IsBusy = true;
+
+                Stopwatch timer = Stopwatch.StartNew();
+
+                int lineCount = 0;
+                int skippedWords = 0;
+                string line;
+
+                await Task.Run(() =>
+                {
+                    using (StreamReader rdr = new(fullyQualifiedFilepath))
+                    {
+                        while ((line = rdr.ReadLine()) != null)
+                        {
+                            if (line.All(char.IsLetter) == false)
+                            {
+                                ++skippedWords;
+
+                                continue;
+                            }
+
+                            if (WordList.Contains(line, StringComparer.OrdinalIgnoreCase))
+                            {
+                                ++skippedWords;
+
+                                continue;
+                            }
+
+                            ++lineCount;
+
+                            WordList.Add(line);
+                        }
+                    }
+
+                    WordList.Sort();
+                });
+
+                timer.Stop();
+
+                var fileInfo = new FileInfo(fullyQualifiedFilepath);
+
+                SetStatusText($"Added {lineCount:###,###,##0} words and skipped {skippedWords:###,###,##0} words from " +
+                    $"\"{fileInfo.Name}\" in {timer.Elapsed} for a total of {WordList.Count:###,###,##0}.");
+
+                RaisePropertyChanged(nameof(WordList));
+            }
+            catch
+            {
+                throw;
+            }
+            finally
+            {
+                IsBusy = false;
+            }
         }
 
         internal void RemoveExcludedLetter(Enumerations.Letters letter)
@@ -586,16 +574,6 @@ namespace WordFinder.ViewModel
             m_ExcludedLetters.Remove(letter);
         }
 
-        internal void AddIncludedLetter(Enumerations.Letters letter)
-        {
-            if (m_IncludedLetters.Contains(letter))
-            {
-                return;
-            }
-
-            m_IncludedLetters.Add(letter);
-        }
-
         internal void RemoveIncludedLetter(Enumerations.Letters letter)
         {
             if (m_IncludedLetters.Contains(letter) == false)
@@ -604,6 +582,30 @@ namespace WordFinder.ViewModel
             }
 
             m_IncludedLetters.Remove(letter);
+        }
+
+        internal async Task SaveAsync(string fullyQualifiedFilepath)
+        {
+            await WordList.SaveAsync(fullyQualifiedFilepath);
+        }
+
+        internal void SetStatusText(string text, bool autoRemove = true)
+        {
+            m_StatusLabelTimer.Enabled = false;
+
+            StatusLabelText = text;
+
+            if (autoRemove)
+            {
+                m_StatusLabelCount = 0;
+
+                m_StatusLabelTimer.Enabled = true;
+            }
+        }
+
+        internal bool HasSelectedItems()
+        {
+            return true;
         }
 
         #endregion Public Methods

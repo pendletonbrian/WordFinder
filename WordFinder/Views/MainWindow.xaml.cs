@@ -441,6 +441,7 @@ namespace WordFinder.Views
                 }
                 else
                 {
+                    e.CanExecute = m_ViewModel.HasSelectedItems();
                 }
 
                 e.Handled = true;
