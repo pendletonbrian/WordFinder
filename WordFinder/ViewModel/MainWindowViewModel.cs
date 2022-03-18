@@ -20,10 +20,13 @@ namespace WordFinder.ViewModel
         internal static readonly string BASE_TITLE_TEXT = " Word Finder";
         internal static readonly string WORD_LIST_FILE_NAME = "word_finder_word_list.xml";
 
-        public static RoutedCommand ReadFileCommand = new RoutedCommand();
-        public static RoutedCommand ReadDirectoryCommand = new RoutedCommand();
-        public static RoutedCommand GenerateListCommand = new RoutedCommand();
-        public static RoutedCommand SearchCommand = new RoutedCommand();
+        public static RoutedCommand ReadFileCommand = new();
+        public static RoutedCommand ReadDirectoryCommand = new();
+        public static RoutedCommand GenerateListCommand = new();
+        public static RoutedCommand SearchCommand = new();
+
+        public static RoutedCommand AddWordCommand = new();
+        public static RoutedCommand RemoveWordCommand = new();
 
         #endregion Public Members
 

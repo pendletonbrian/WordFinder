@@ -220,7 +220,7 @@
                 <!-- Last Row: Search button -->
                 <Button Grid.ColumnSpan="2"
                         Grid.Row="4"
-                        Margin="4"
+                        Margin="12"
                         Width="75"
                         Height="26"
                         Content="Search"
@@ -237,8 +237,25 @@
                   HorizontalAlignment="Stretch"
                   VerticalAlignment="Stretch"
                   Margin="4"
-                  ItemsSource="{Binding WordList}" SelectionMode="Single"/>
+                  ItemsSource="{Binding WordList}"
+                  SelectionMode="Multiple">
+            <ListView.CommandBindings>
+                <CommandBinding Command="{x:Static vm:MainWindowViewModel.AddWordCommand}"
+                                CanExecute="AddWordCommand_CanExecute" Executed="AddWordCommand_Executed" />
+                <CommandBinding Command="{x:Static vm:MainWindowViewModel.RemoveWordCommand}"
+                                CanExecute="RemoveWordCommand_CanExecute"
+                                Executed="RemoveWordCommand_Executed" />
+            </ListView.CommandBindings>
+            <ListView.ContextMenu>
+                <ContextMenu>
+                    <MenuItem Header="Add word" />
+                    <Separator />
+                    <MenuItem Header="Remove word" />
+                </ContextMenu>
+            </ListView.ContextMenu>
+        </ListView>
 
+        <!-- Status bar -->
         <Border Grid.Column="0"
                 Grid.Row="3"
                 BorderBrush="LightBlue"

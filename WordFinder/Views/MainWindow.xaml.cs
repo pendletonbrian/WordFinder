@@ -391,6 +391,86 @@ namespace WordFinder.Views
             }
         }
 
+        private void AddWordCommand_CanExecute(object sender, CanExecuteRoutedEventArgs e)
+        {
+            try
+            {
+                if (m_ViewModel is null)
+                {
+                    e.CanExecute = false;
+                }
+                else
+                {
+                }
+
+                e.Handled = true;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.ToString());
+
+                ShowErrorMessage($"Exception: \"{ex.Message}\".");
+            }
+
+        }
+
+        private void AddWordCommand_Executed(object sender, ExecutedRoutedEventArgs e)
+        {
+            try
+            {
+
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.ToString());
+
+                ShowErrorMessage($"Exception: \"{ex.Message}\".");
+            }
+            finally
+            {
+            }
+        }
+
+        private void RemoveWordCommand_CanExecute(object sender, CanExecuteRoutedEventArgs e)
+        {
+            try
+            {
+                if (m_ViewModel is null)
+                {
+                    e.CanExecute = false;
+                }
+                else
+                {
+                }
+
+                e.Handled = true;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.ToString());
+
+                ShowErrorMessage($"Exception: \"{ex.Message}\".");
+            }
+
+        }
+
+        private void RemoveWordCommand_Executed(object sender, ExecutedRoutedEventArgs e)
+        {
+            try
+            {
+
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.ToString());
+
+                ShowErrorMessage($"Exception: \"{ex.Message}\".");
+            }
+            finally
+            {
+            }
+        }
+
         #endregion Private Methods
 
     }
