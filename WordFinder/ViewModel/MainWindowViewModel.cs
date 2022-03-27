@@ -552,7 +552,11 @@ namespace WordFinder.ViewModel
                 int skippedWords = 0;
                 string line;
 
-                // Note that this only works with all lower case.
+                /*
+                 * Search for 3 of the same letter consecutively.
+                 * 
+                 * NOTE: This only works for lower case.
+                */
                 Regex consecutiveLettersRegex = new Regex(@"([a-z])\1\1");
 
                 await Task.Run(() =>
