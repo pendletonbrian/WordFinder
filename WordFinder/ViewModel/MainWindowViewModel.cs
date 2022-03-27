@@ -23,6 +23,7 @@ namespace WordFinder.ViewModel
         public static RoutedCommand ReadFileCommand = new();
         public static RoutedCommand RemoveWordCommand = new();
         public static RoutedCommand SearchCommand = new();
+        public static RoutedCommand CopyCommand = new();
         internal static readonly string BASE_TITLE_TEXT = " Word Finder";
         internal static readonly string WORD_LIST_FILE_NAME = "word_finder_word_list.xml";
 
@@ -110,6 +111,8 @@ namespace WordFinder.ViewModel
         /// ALL the words, yo!
         /// </summary>
         private WordList m_WordList = new();
+
+        private List<string> m_SelectedWords = new();
 
         #endregion Private Members
 
@@ -265,6 +268,11 @@ namespace WordFinder.ViewModel
         /// Like, the list of all the words, man.
         /// </summary>
         public WordList WordList => m_WordList;
+
+        public List<string> SelectedWords
+        {
+            get => m_SelectedWords;
+        }
 
         #endregion Public Properties
 
@@ -605,7 +613,51 @@ namespace WordFinder.ViewModel
 
         internal bool HasSelectedItems()
         {
-            return true;
+            return SelectedWords.Count > 0;
+        }
+
+        internal void AddSelectedWord(string wordToAdd)
+        {
+            if (string.IsNullOrWhiteSpace(wordToAdd))
+            {
+                Debug.WriteLine("The word to add is null/empty.");
+
+                return;
+            }
+
+            if (SelectedWords.Contains(wordToAdd, StringComparer.OrdinalIgnoreCase))
+            {
+                Debug.WriteLine($"The word to add \"{wordToAdd}\" already exists in the list.");
+
+                return;
+            }
+
+            SelectedWords.Add(wordToAdd);
+
+            SelectedWords.Sort(StringComparer.OrdinalIgnoreCase);
+
+            RaisePropertyChanged(nameof(SelectedWords));
+        }
+
+        internal void RemoveSelectedWord(string wordToRemove)
+        {
+            if (string.IsNullOrWhiteSpace(wordToRemove))
+            {
+                Debug.WriteLine("The word to remove is null/empty.");
+
+                return;
+            }
+
+            if (SelectedWords.Remove(wordToRemove) == false)
+            {
+                Debug.WriteLine($"The word to remove \"{wordToRemove}\" doesn't exist in the list.");
+
+                return;
+            }
+
+            SelectedWords.Sort(StringComparer.OrdinalIgnoreCase);
+
+            RaisePropertyChanged(nameof(SelectedWords));
         }
 
         #endregion Public Methods

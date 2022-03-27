@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
+using System.Text;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using Microsoft.Win32;
@@ -41,9 +43,65 @@ namespace WordFinder.Views
             _ = MessageBox.Show(this, msg, MainWindowViewModel.BASE_TITLE_TEXT, MessageBoxButton.OK, MessageBoxImage.Error);
         }
 
+        internal void ShowInfoMessage(string msg)
+        {
+            _ = MessageBox.Show(this, msg, MainWindowViewModel.BASE_TITLE_TEXT, MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+
         #endregion Public Methods
 
         #region Private Methods
+
+        private void CopyCommand_CanExecute(object sender, CanExecuteRoutedEventArgs e)
+        {
+            try
+            {
+                if (m_ViewModel is null)
+                {
+                    e.CanExecute = false;
+                }
+                else
+                {
+                    e.CanExecute = m_ViewModel.HasSelectedItems();
+                }
+
+                e.Handled = true;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.ToString());
+
+                ShowErrorMessage($"Exception: \"{ex.Message}\".");
+            }
+        }
+
+        private void CopyCommand_Executed(object sender, ExecutedRoutedEventArgs e)
+        {
+            try
+            {
+                StringBuilder sb = new();
+
+                foreach (var selectedItem in m_ViewModel.SelectedWords)
+                {
+                    _ = sb.AppendLine(selectedItem);
+                }
+
+                Clipboard.SetText(sb.ToString());
+
+                string msg = m_ViewModel.SelectedWords.Count == 1 ? 
+                    "Copied one word to the Clipboard" : 
+                    $"Copied {m_ViewModel.SelectedWords.Count} words to the Clipboard";
+
+                ShowInfoMessage(msg);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.ToString());
+
+                ShowErrorMessage($"Exception: \"{ex.Message}\".");
+            }
+
+        }
 
         private void ExcludedLetterButton_CheckedChanged(object sender, RoutedEventArgs e)
         {
@@ -203,9 +261,7 @@ namespace WordFinder.Views
 
                 ShowErrorMessage($"Exception: \"{ex.Message}\".");
             }
-            finally
-            {
-            }
+
         }
 
         private async void ReadFileCommand_Executed(object sender, ExecutedRoutedEventArgs e)
@@ -264,9 +320,7 @@ namespace WordFinder.Views
 
                 ShowErrorMessage($"Exception: \"{ex.Message}\".");
             }
-            finally
-            {
-            }
+
         }
 
         private async void ReadDirectoryCommand_Executed(object sender, ExecutedRoutedEventArgs e)
@@ -348,9 +402,7 @@ namespace WordFinder.Views
 
                 ShowErrorMessage($"Exception: \"{ex.Message}\".");
             }
-            finally
-            {
-            }
+
         }
 
         private async void GenerateListCommand_Executed(object sender, ExecutedRoutedEventArgs e)
@@ -470,6 +522,30 @@ namespace WordFinder.Views
             finally
             {
             }
+        }
+
+        private void lstViewWords_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        {
+            if (e.Source is ListView == false)
+            {
+                return;
+            }
+
+            if (m_ViewModel is null)
+            {
+                return;
+            }
+
+            foreach (string addedWord in e.AddedItems)
+            {
+                m_ViewModel.AddSelectedWord(addedWord);
+            }
+
+            foreach (string removedWord in e.RemovedItems)
+            {
+                m_ViewModel.RemoveSelectedWord(removedWord);
+            }
+
         }
 
         #endregion Private Methods
