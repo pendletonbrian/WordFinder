@@ -227,6 +227,17 @@ namespace WordFinder.Views
 
                 m_ViewModel.SetStatusText($"Loaded {m_ViewModel.WordList.Count:###,###,##0} entries in {timer.Elapsed}.");
 
+                System.Collections.Generic.List<string> testValues = new();
+                testValues.Add("aaabcdef");
+                testValues.Add("aAabcdef");
+                testValues.Add("aa");
+                testValues.Add("aabbbcdef");
+                testValues.Add("aabBbcdef");
+
+                foreach (string word in testValues)
+                {
+                    _ = word.HasConsecutiveCharacters(3);
+                }
             }
             catch (Exception ex)
             {

@@ -161,5 +161,54 @@ namespace WordFinder.Classes
             throw new ArgumentException("Not found.", nameof(description));
         }
 
+        /// <summary>
+        /// Test the calling string to see if it has any characters that repeat 
+        /// consecutively the given number of times.
+        /// </summary>
+        /// <param name="target"></param>
+        /// <param name="numConsecutiveChars">The number of times a character has
+        /// to repeat consecutively to return true.</param>
+        /// <returns></returns>
+        public static bool HasConsecutiveCharacters(this string target, int numConsecutiveChars)
+        {
+            if (string.IsNullOrWhiteSpace(target))
+            {
+                return false;
+            }
+
+            if (target.Length < numConsecutiveChars)
+            {
+                return false;
+            }
+
+            int count = 1;
+            char prevChar = Char.MinValue;
+            bool found = false;
+
+            // This is going to have issues with unicode...
+            foreach (char c in target.ToLowerInvariant().ToCharArray())
+            {
+                if (c.Equals(prevChar))
+                {
+                    ++count;
+                }
+                else
+                {
+                    count = 1;
+                }
+
+                if (count >= numConsecutiveChars)
+                {
+                    found = true;
+
+                    break;
+                }
+
+                prevChar = c;
+            }
+
+            return found;
+        }
+
     }
 }
