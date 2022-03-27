@@ -18,12 +18,12 @@ namespace WordFinder.ViewModel
         #region Public Members
 
         public static RoutedCommand AddWordCommand = new();
+        public static RoutedCommand CopyCommand = new();
         public static RoutedCommand GenerateListCommand = new();
         public static RoutedCommand ReadDirectoryCommand = new();
         public static RoutedCommand ReadFileCommand = new();
         public static RoutedCommand RemoveWordCommand = new();
         public static RoutedCommand SearchCommand = new();
-        public static RoutedCommand CopyCommand = new();
         internal static readonly string BASE_TITLE_TEXT = " Word Finder";
         internal static readonly string WORD_LIST_FILE_NAME = "word_finder_word_list.xml";
 
@@ -86,6 +86,8 @@ namespace WordFinder.ViewModel
         /// </summary>
         private Regex m_RegEx;
 
+        private List<string> m_SelectedWords = new();
+
         /// <summary>
         /// Whether or not to show and start the progress bar.
         /// </summary>
@@ -111,8 +113,6 @@ namespace WordFinder.ViewModel
         /// ALL the words, yo!
         /// </summary>
         private WordList m_WordList = new();
-
-        private List<string> m_SelectedWords = new();
 
         #endregion Private Members
 
@@ -173,6 +173,11 @@ namespace WordFinder.ViewModel
         public ObservableCollection<int> PossibleNumberOfChars { get; } = new();
 
         public List<KeyValuePair<string, string>> SelectedLettersKeyValueList => m_SelectedLettersKeyValueList;
+
+        public List<string> SelectedWords
+        {
+            get => m_SelectedWords;
+        }
 
         /// <summary>
         /// Whether or not to show (and start) the status bar.
@@ -269,11 +274,6 @@ namespace WordFinder.ViewModel
         /// </summary>
         public WordList WordList => m_WordList;
 
-        public List<string> SelectedWords
-        {
-            get => m_SelectedWords;
-        }
-
         #endregion Public Properties
 
         #region constructor
@@ -365,6 +365,34 @@ namespace WordFinder.ViewModel
             }
 
             m_IncludedLetters.Add(letter);
+        }
+
+        internal void AddSelectedWord(string wordToAdd)
+        {
+            if (string.IsNullOrWhiteSpace(wordToAdd))
+            {
+                Debug.WriteLine("The word to add is null/empty.");
+
+                return;
+            }
+
+            if (SelectedWords.Contains(wordToAdd, StringComparer.OrdinalIgnoreCase))
+            {
+                Debug.WriteLine($"The word to add \"{wordToAdd}\" already exists in the list.");
+
+                return;
+            }
+
+            SelectedWords.Add(wordToAdd);
+
+            SelectedWords.Sort(StringComparer.OrdinalIgnoreCase);
+
+            RaisePropertyChanged(nameof(SelectedWords));
+        }
+
+        internal bool HasSelectedItems()
+        {
+            return SelectedWords.Count > 0;
         }
 
         internal async Task LoadAsync(string fullyQualifiedFilepath)
@@ -524,13 +552,26 @@ namespace WordFinder.ViewModel
                 int skippedWords = 0;
                 string line;
 
+                // Note that this only works with all lower case.
+                Regex consecutiveLettersRegex = new Regex(@"([a-z])\1\1");
+
                 await Task.Run(() =>
                 {
                     using (StreamReader rdr = new(fullyQualifiedFilepath))
                     {
                         while ((line = rdr.ReadLine()) != null)
                         {
+                            // Skip numbers, spaces, apostrophes, etc.
                             if (line.All(char.IsLetter) == false)
+                            {
+                                ++skippedWords;
+
+                                continue;
+                            }
+
+                            line = line.ToLowerInvariant();
+
+                            if (consecutiveLettersRegex.IsMatch(line))
                             {
                                 ++skippedWords;
 
@@ -592,53 +633,6 @@ namespace WordFinder.ViewModel
             m_IncludedLetters.Remove(letter);
         }
 
-        internal async Task SaveAsync(string fullyQualifiedFilepath)
-        {
-            await WordList.SaveAsync(fullyQualifiedFilepath);
-        }
-
-        internal void SetStatusText(string text, bool autoRemove = true)
-        {
-            m_StatusLabelTimer.Enabled = false;
-
-            StatusLabelText = text;
-
-            if (autoRemove)
-            {
-                m_StatusLabelCount = 0;
-
-                m_StatusLabelTimer.Enabled = true;
-            }
-        }
-
-        internal bool HasSelectedItems()
-        {
-            return SelectedWords.Count > 0;
-        }
-
-        internal void AddSelectedWord(string wordToAdd)
-        {
-            if (string.IsNullOrWhiteSpace(wordToAdd))
-            {
-                Debug.WriteLine("The word to add is null/empty.");
-
-                return;
-            }
-
-            if (SelectedWords.Contains(wordToAdd, StringComparer.OrdinalIgnoreCase))
-            {
-                Debug.WriteLine($"The word to add \"{wordToAdd}\" already exists in the list.");
-
-                return;
-            }
-
-            SelectedWords.Add(wordToAdd);
-
-            SelectedWords.Sort(StringComparer.OrdinalIgnoreCase);
-
-            RaisePropertyChanged(nameof(SelectedWords));
-        }
-
         internal void RemoveSelectedWord(string wordToRemove)
         {
             if (string.IsNullOrWhiteSpace(wordToRemove))
@@ -658,6 +652,25 @@ namespace WordFinder.ViewModel
             SelectedWords.Sort(StringComparer.OrdinalIgnoreCase);
 
             RaisePropertyChanged(nameof(SelectedWords));
+        }
+
+        internal async Task SaveAsync(string fullyQualifiedFilepath)
+        {
+            await WordList.SaveAsync(fullyQualifiedFilepath);
+        }
+
+        internal void SetStatusText(string text, bool autoRemove = true)
+        {
+            m_StatusLabelTimer.Enabled = false;
+
+            StatusLabelText = text;
+
+            if (autoRemove)
+            {
+                m_StatusLabelCount = 0;
+
+                m_StatusLabelTimer.Enabled = true;
+            }
         }
 
         #endregion Public Methods
